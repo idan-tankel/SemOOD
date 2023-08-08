@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Run evaluation",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--model",
+                "blip2-opt-2.7b",
+                "--pretrained",
+                "Salesforce",
+                "--output",
+                "./output",
+                "--coco_image_root",
+                "./data/coco/images/val2017/",
+                "--data_root",
+                "./data"
+            ],
+            "justMyCode": false
+        }
+    ]
+}

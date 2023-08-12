@@ -18,9 +18,9 @@
                 "--output",
                 "./output",
                 "--coco_image_root",
-                "./data/coco/images/val2017/",
+                "./sugar-crepe/data/coco/images/val2017/",
                 "--data_root",
-                "./data"
+                "./sugar-crepe/data"
             ],
             "justMyCode": false
         }

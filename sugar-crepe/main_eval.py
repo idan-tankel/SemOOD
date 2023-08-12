@@ -1,12 +1,11 @@
 import argparse
 import json
 import os
+from transformers import Blip2Processor, Blip2Model
 
 import torch
 from PIL import Image
 from tqdm import tqdm
-
-import open_clip
 
 models = [
     ('RN50', 'openai'),
@@ -16,7 +15,7 @@ models = [
     ('RN50x16', 'openai'),
     ('RN50x64', 'openai'),
     ('ViT-L-14', 'openai'),
-    ('blip2-opt-2.7b','Salesforce'),
+    ('blip2-opt-2.7b', 'Salesforce'),
     # ('ViT-B-32-quickgelu', 'datacomp_s_s13m_b4k'),
     # ('ViT-B-32-quickgelu', 'datacomp_m_s128m_b4k'),
     # ('ViT-B-16', 'datacomp_l_s1b_b8k'),
@@ -31,18 +30,22 @@ models = [
 
 
 def load_model(args, pretrained, device):
-    model, _, transform = open_clip.create_model_and_transforms(
-        model_name=args.model,
-        pretrained=pretrained,
-        cache_dir=args.model_cache_dir,
-        device=device
-    )
+    # model, _, transform = open_clip.create_model_and_transforms(
+    #     model_name=args.model,
+    #     pretrained=pretrained,
+    #     cache_dir=args.model_cache_dir,
+    #     device=device
+    # )
     # load other models not from openCLIP
-    
+#   from PIL import Image
+
+#device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
+    model = Blip2Model.from_pretrained("Salesforce/blip2-opt-2.7b", torch_dtype=torch.float16)
     model = model.to(device)
-    tokenizer = open_clip.get_tokenizer(args.model)
     model.eval()
-    return model, tokenizer, transform
+    return model, processor, transform
 
 
 @torch.no_grad()

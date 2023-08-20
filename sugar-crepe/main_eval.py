@@ -45,7 +45,7 @@ def load_model(args, pretrained, device):
     transform = lambda x: x  # identity
     model = model.to(device)
     model.eval()
-    return model, processor, tokenizer,transform
+    return model, processor, tokenizer, transform
 
 
 @torch.no_grad()

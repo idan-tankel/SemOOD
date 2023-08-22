@@ -1,12 +1,12 @@
 import torch
 from PIL import Image
+import numpy
 import os
-from lavis.models import load_model_and_preprocess
-from IPython.display import display
-from lavis.processors import load_processor
 from transformers import Blip2Processor,Blip2ForConditionalGeneration
 from tqdm import tqdm
 import json
+import wandb
+import pandas as pd
 # import pytorch_lightning as pl
 
 
@@ -54,7 +54,9 @@ def inference_loop(dataset,image_root, model:Blip2ForConditionalGeneration, prep
         device (_type_): _description_
     """    
     model.eval()
+    metrics = {}
     for dataset_type, sub_dataset in dataset.items():
+        count_true = 0
         for i, data in tqdm(sub_dataset.items(), desc=f'evaluating {dataset_type}'):
             with torch.no_grad():
                 #
@@ -65,14 +67,35 @@ def inference_loop(dataset,image_root, model:Blip2ForConditionalGeneration, prep
                 # input_ids is to tokenize the text
                 image = Image.open(os.path.join(image_root, data['filename']))
                 # display(image)
-                inputs = preprocessor(images=image, return_tensors='pt').to(device)
+                pos_text,neg_text = data['caption'],data['negative_caption']
+                random = numpy.random.choice([0,1])
+                if random == 0:
+                    prompt = f"Question: The following sentence is correct: (A).{pos_text} (B).{neg_text}. Answer:"
+                else:
+                    prompt = f"Question: The following sentence is correct: (A).{neg_text} (B).{pos_text}. Answer:"
+                wright_answer = "A" if random == 0 else "B"                                    
+                inputs = preprocessor(images=image, text=prompt,return_tensors='pt').to(device)
                 # the last 2 kwargs are configuration for the GenerationMixin
                 # the scores are the ones for the next token prediction (argmax)
                 # this is since the greedy algorithm is used
-                output_ids = model.generate(**inputs, output_scores=True, return_dict_in_generate=True)
-                output = preprocessor.decode(output_ids[0])
+                # output_scores=True, return_dict_in_generate=True
+                output_ids = model.generate(**inputs)
+                output = preprocessor.decode(output_ids[0,1:])
                 print(f"Output: {output}")
                 print("=====================================")
+                true = output[0:1] == f' {wright_answer}' or output[0:4] == f' ({wright_answer})'
+                if true:
+                    count_true += 1
+                print(true)
+        print(count_true / float(i))
+        acc = 100.0*count_true / float(i)
+        metrics.update({dataset_type: acc})
+    print(metrics)
+    # metrics = {k: v.to(device='cpu', non_blocking=True).item().numpy() for k, v in metrics.items ()}
+    metrics = pd.DataFrame(metrics)
+    print(f"Dump results to: {os.path.join(args.output, f'{args.model}-{args.pretrained}.json')}")
+    metrics.to_json(os.path.join(args.output, f'{args.model}-{args.pretrained}.json'),indent=4)
+
 
 
 def main():

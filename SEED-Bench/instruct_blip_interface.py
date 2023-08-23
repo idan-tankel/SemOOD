@@ -70,8 +70,11 @@ class MLLM_Tester(nn.Module):
         data_type = x['data_type']
         if data_type == 'image':
             # preprocessing images in evaluation dimension 1-9
-            raw_image = Image.open(open(data_path, "rb")).convert("RGB")
-            image = self.vis_processor(raw_image).unsqueeze(0).cuda()
+            try:
+                raw_image = Image.open(open(data_path, "rb")).convert("RGB")
+                image = self.vis_processor(raw_image).unsqueeze(0).cuda()
+            except FileNotFoundError:
+                return torch.zeros(4).cuda()
         else:
             # preprocessing videos in evaluation dimension 10-12
             use_pyav = False

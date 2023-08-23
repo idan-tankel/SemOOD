@@ -1,0 +1,30 @@
+{
+    "questions": [
+        {
+            "answer": "A",
+            "choice_a": "3",
+            "choice_b": "2",
+            "choice_c": "1",
+            "choice_d": "4",
+            "data_id": "136697_4236140081",
+            "data_type": "image",
+            "question": "How many pictures are hanging on the wall in the living room?",
+            "question_id": "75809",
+            "question_type_id": 5
+        }
+    ],
+    "question_type": {
+        "Scene Understanding": 1,
+        "Instance Identity": 2,
+        "Instance Attributes": 3,
+        "Instance Location": 4,
+        "Instances Counting": 5,
+        "Spatial Relation": 6,
+        "Instance Interaction": 7,
+        "Visual Reasoning": 8,
+        "Text Understanding": 9,
+        "Action Recognition": 10,
+        "Action Prediction": 11,
+        "Procedure Understanding": 12
+    }
+}

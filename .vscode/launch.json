@@ -31,6 +31,21 @@
                 "./sugar-crepe/data"
             ],
             "justMyCode": false
+        },
+        {
+            "name": "Launch Seed-Bench",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/SEED-Bench/eval.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--model",
+                "instruct_blip",
+                "--anno_path",
+                "${workspaceFolder}/SEED-Bench/SEED-Bench.json",
+                "--output-dir",
+                "results"
+            ],
         }
     ]
 }

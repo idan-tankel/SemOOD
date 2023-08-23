@@ -8,7 +8,7 @@ import numpy as np
 import random
 
 # root directory of evaluation dimension 1-9
-cc3m_dir = "/YOUR_PATH_TO/seed_bench_image"
+cc3m_dir = "/net/mraid11/export/data/idanta/DownloadConceptualCaptions/training"
 # root directory of evaluation dimension 10
 dimension10_dir = "/YOUR_PATH_TO/SSV2/videos"
 # root directory of evaluation dimension 11

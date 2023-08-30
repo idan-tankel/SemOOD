@@ -1,7 +1,7 @@
 import os
 import json
 import argparse
-
+import pandas as pd
 import torch
 from tqdm import tqdm
 import numpy as np
@@ -32,8 +32,10 @@ def build_model(model_name):
     if model_name == 'instruct_blip':
         from instruct_blip_interface import build
 
-    model = build()
 
+        model = build()
+    if model_name == "blip2ForConditionalGeneration":
+        pass
     return model
 
 
@@ -68,7 +70,11 @@ def run_inference(model, qa_anno, output_dir):
         data_info['data_path'] = data_path
 
         # losses: loss values of 4 choices, torch tensor, shape=[4]
+        # prompt the model with the code {question} + {choice}/
+        # prompt that 4 times
+        # choose the one that minimizes the loss out of these 4 times
         losses = model(data_info)
+
         class_ranks = torch.argsort(losses, dim=-1).cpu()
         pred_id = ['A', 'B', 'C', 'D'][class_ranks[0]]
         gt = qa_item['answer']
@@ -123,6 +129,8 @@ if __name__ == '__main__':
     if 'questions' in qa_anno.keys():
         qa_anno = qa_anno['questions']
 
+    x = pd.DataFrame(qa_anno)
+    x = x[x.question_type_id == 1]
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
 

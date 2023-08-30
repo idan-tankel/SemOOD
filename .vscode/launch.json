@@ -42,7 +42,7 @@
                 "--model",
                 "instruct_blip",
                 "--anno_path",
-                "${workspaceFolder}/SEED-Bench/SEED_filtered_debug.json",
+                "${workspaceFolder}/SEED-Bench/SEED-Bench.json",
                 "--output-dir",
                 "results"
             ],

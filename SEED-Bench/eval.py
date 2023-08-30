@@ -98,11 +98,14 @@ def run_inference(model, qa_anno, output_dir):
     total_count = 0
     total_correct = 0
     for data_type in type_counts.keys():
-        accuracy = correct_counts[data_type] / type_counts[data_type] * 100
+        try:
+            accuracy = correct_counts[data_type] / type_counts[data_type] * 100
+            total_correct += correct_counts[data_type]
+        except KeyError:
+            accuracy = 0.0
+        total_count += type_counts[data_type]
         print(f"Data type {data_type}: {accuracy:.2f}%")
 
-        total_count += type_counts[data_type]
-        total_correct += correct_counts[data_type]
 
     total_accuracy = total_correct / total_count * 100
     print(f"Total accuracy: {total_accuracy:.2f}%")

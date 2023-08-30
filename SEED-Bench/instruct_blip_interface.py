@@ -66,6 +66,17 @@ class MLLM_Tester(nn.Module):
         return offsets
 
     def forward(self, x):
+        """
+        `forward` is A wrapping funtion for the inference process. 
+        This is not something the model is being trained on.
+
+
+        Args:
+            x (_type_): _description_
+
+        Returns:
+            `torch.Tensor`: a loss ranking of shape (number_of_choices,), giving us the likelihood of each choice being the correct answer
+        """        
         data_path, question, choices = x['data_path'], x['question'], x['choices']
         data_type = x['data_type']
         if data_type == 'image':
@@ -126,6 +137,7 @@ class MLLM_Tester(nn.Module):
         prompt = self.process_prompt(question)
         prompt = [prompt] * bs
 
+        # start the tokenization process
         query_tokens = self.model.query_tokens.expand(bs, -1, -1)
         if self.model.qformer_text_input:
             text_Qformer = self.model.tokenizer(
@@ -205,7 +217,7 @@ class MLLM_Tester(nn.Module):
 
         n_cands = len(choices)
 
-        with self.model.maybe_autocast(dtype=torch.bfloat16):
+        with self.model.maybe_autocast(dtype=torch.float16):
             inputs_embeds = self.model.t5_model.encoder.embed_tokens(input_tokens.input_ids)
             inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
 
@@ -213,6 +225,7 @@ class MLLM_Tester(nn.Module):
                 inputs_embeds=inputs_embeds,
                 attention_mask=encoder_atts,
             )
+            # encoder_outputs contains only the inputs embeddings using the t5 encoder
 
             losses = []
             for n in range(n_segments):
@@ -238,6 +251,9 @@ class MLLM_Tester(nn.Module):
                     -100)
 
                 # TODO understand this part
+                # hypothesis - this part is used to understand and learn similarities between the possible answers
+                # and the question
+                # how the visual data is encoded here?
                 outputs = self.model.t5_model(
                     encoder_outputs=this_encoder_outputs, # input last hidden state
                     attention_mask=this_encoder_atts, # input 
@@ -246,6 +262,8 @@ class MLLM_Tester(nn.Module):
                     labels=this_targets,
                     reduction="none",
                 )
+                # this_targets and this_output_tokens_atts are computed out of the 4 possible answers
+                # they do not mark the correct answer!
                 loss = outputs.loss
 
                 loss = loss.reshape(bs, seg_len)

@@ -268,7 +268,10 @@ class T5LayerNorm(nn.Module):
         # half-precision inputs is done in fp32
 
         variance = hidden_states.to(torch.float32).pow(2).mean(-1, keepdim=True)
-        hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
+        # hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
+        
+        clamp_value = torch.finfo(hidden_states.dtype).max - 1000
+        hidden_states = torch.clamp(hidden_states, min=-clamp_value, max=clamp_value) * torch.rsqrt(variance + self.variance_epsilon)
 
         # convert into half-precision if necessary
         if self.weight.dtype in [torch.float16, torch.bfloat16]:

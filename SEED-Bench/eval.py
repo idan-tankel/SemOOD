@@ -6,6 +6,7 @@ import torch
 from tqdm import tqdm
 import numpy as np
 import random
+from random import shuffle
 
 # root directory of evaluation dimension 1-9
 cc3m_dir = "/net/mraid11/export/data/idanta/DownloadConceptualCaptions/training"
@@ -73,21 +74,30 @@ def run_inference(model, qa_anno, output_dir):
         # prompt the model with the code {question} + {choice}/
         # prompt that 4 times
         # choose the one that minimizes the loss out of these 4 times
+        # randomly permute the data info GT.
+        # real_choices = data_info['choices']
+        # y = real_choices.copy()
+        # shuffle(y)
+        # data_info['choices'] = y
         losses = model(data_info)
 
         class_ranks = torch.argsort(losses, dim=-1).cpu()
         pred_id = ['A', 'B', 'C', 'D'][class_ranks[0]]
         gt = qa_item['answer']
+        
         answer_record = {
             'q_id': qa_item['question_id'],
             'prediction': pred_id,
             'gt': gt,
             'q_type_id': qa_item['question_type_id'],
+            # 'real_gt': real_choices,
+            'permuted_gt': data_info['choices']
         }
         answer_list.append(answer_record)
         # output prediction record for each question
         output_f.write(json.dumps(answer_record) + "\n")
         step += 1
+    # convert the evaluation to dataframe
 
     print("evaluation finished! Calculating accuracy...")
     type_counts = {}
@@ -130,12 +140,17 @@ if __name__ == '__main__':
         qa_anno = qa_anno['questions']
 
     x = pd.DataFrame(qa_anno)
-    x = x[x.question_type_id == 1]
+    df = x[x.question_type_id == 1]
+    y = df.to_dict(orient="records")
+
+
+
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
 
     print(f'evaluating.. {args.model}')
     # The interface for testing MLLMs
     model = build_model(args.model).cuda()
-    run_inference(model, qa_anno, args.output_dir)
+    run_inference(model, y, args.output_dir)
+    print(model.failed_examples)
 

@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image,UnidentifiedImageError
 import numpy as np
 import torch
 import torch.nn as nn
@@ -26,6 +26,7 @@ class MLLM_Tester(nn.Module):
             is_eval=True
         )
         self.vis_processor = vis_processors['eval']
+        self.failed_examples = 0
 
         crop_size = 224
         scale_size = 224
@@ -85,6 +86,10 @@ class MLLM_Tester(nn.Module):
                 raw_image = Image.open(open(data_path, "rb")).convert("RGB")
                 image = self.vis_processor(raw_image).unsqueeze(0).cuda()
             except FileNotFoundError:
+                self.failed_examples += 1
+                return torch.zeros(4).cuda()
+            except UnidentifiedImageError:
+                self.failed_examples += 1
                 return torch.zeros(4).cuda()
         else:
             # preprocessing videos in evaluation dimension 10-12

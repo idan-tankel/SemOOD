@@ -1,3 +1,4 @@
+from PIL import Image
 import os
 import torch
 import yaml
@@ -12,7 +13,7 @@ from lavis.models.blip_models import blip_retrieval
 # from .blip_utils.utils import MetricLogger
 from lavis.models import load_model_and_preprocess
 from transformers import Blip2ForConditionalGeneration, Blip2Processor
-
+image_dir = "/net/mraid11/export/data/idanta/DownloadConceptualCaptions/training"
 # All of the below URLs are taken from, and most of the implementation are heavily inspired from the wonderful https://github.com/salesforce/BLIP repo.
 
 download_urls = {
@@ -752,39 +753,43 @@ class BLIP2HFModelWrapper:
         """
         t2i_scores, i2t_scores = [], []
         # loss_fct = CrossEntropyLoss(reduction="none")
-        a = 0
+        batch_size = 1
         for batch in tqdm(joint_loader):
             # a+=1
             # if a == 2:
             #     break
-            scores = torch.zeros(len(batch["image_options"][0]),len(batch["image_options"]), len(batch["caption_options"]))
-            for i_ind, i_option in enumerate(batch["image_options"]):
-                imgs = self.processor(images=i_option)
-                for c_ind, t_option in enumerate(batch["caption_options"]):
-                    caps = self.processor(text=t_option)
-                    for b_ind in range(len(batch["image_options"][0])):
-                        input_data = {'pixel_values': torch.tensor([imgs['pixel_values'][b_ind]], device='cuda'),
-                                      'input_ids': torch.tensor([caps['input_ids'][b_ind]], device='cuda'),
-                                      'attention_mask': torch.tensor([caps['attention_mask'][b_ind]], device='cuda'),
-                                      'labels': torch.tensor([caps['input_ids'][b_ind]], device='cuda'),
-                                      }
-                        out_dict = self.model(**input_data, return_dict=True)
-                        scores[b_ind, i_ind, c_ind] = -out_dict['loss']
+            scores = torch.zeros(batch_size,batch_size , 4)
+            choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
+            processed_captions = [f"Q: {batch['question']} A: {c}" for c in choices]
+            data_path = os.path.join(image_dir, batch['data_id'])
+            raw_image = Image.open(open(data_path, "rb")).convert("RGB")
+            imgs = self.processor(images=raw_image)
+            # since we are working with BS =1 here only iterate over captions
+            for c_ind, t_option in enumerate(processed_captions):
+                caps = self.processor(text=t_option)
+                for b_ind in range(batch_size):
+                    input_data = {'pixel_values': torch.tensor([imgs['pixel_values']], device='cuda'),
+                                    'input_ids': torch.tensor([caps['input_ids']], device='cuda'),
+                                    'attention_mask': torch.tensor([caps['attention_mask']], device='cuda'),
+                                    'labels': torch.tensor([caps['input_ids']], device='cuda'),
+                                    }
+                    out_dict = self.model(**input_data, return_dict=True)
+                    scores[b_ind, i_ind, c_ind] = -out_dict['loss']
 
-                    # out_dict = self.model(imgs, *caps, return_dict=True) # TODO: make sure the loss is not avergaed.
-                    # labels = caps['input_ids']
-                    # labels = labels.to(logits.device)
-                    # logits = logits[:, -labels.size(1):, :]
-                    # # Shift so that tokens < n predict n
-                    # shift_logits = logits[..., :-1, :].contiguous()
-                    # shift_labels = labels[..., 1:].contiguous().to(logits.device)
-                    #
-                    # # Flatten the tokens
-                    #
-                    # loss = loss_fct(shift_logits.view(-1, self.model.config.text_config.vocab_size), shift_labels.view(-1))
-                    #
-                    # scores[:, i_ind, c_ind] = -loss
-            t2i_scores.append(scores.to('cpu').numpy())
+                # out_dict = self.model(imgs, *caps, return_dict=True) # TODO: make sure the loss is not avergaed.
+                # labels = caps['input_ids']
+                # labels = labels.to(logits.device)
+                # logits = logits[:, -labels.size(1):, :]
+                # # Shift so that tokens < n predict n
+                # shift_logits = logits[..., :-1, :].contiguous()
+                # shift_labels = labels[..., 1:].contiguous().to(logits.device)
+                #
+                # # Flatten the tokens
+                #
+                # loss = loss_fct(shift_logits.view(-1, self.model.config.text_config.vocab_size), shift_labels.view(-1))
+                #
+                # scores[:, i_ind, c_ind] = -loss
+        t2i_scores.append(scores.to('cpu').numpy())
 
         t2i_scores = np.concatenate(t2i_scores, axis=0)  # N x N_t x N_i
         # i2t_scores = np.transpose(t2i_scores, (0, 2, 1))  # N x N_i x N_t

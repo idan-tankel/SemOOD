@@ -537,6 +537,7 @@ class BLIP2ModelWrapper:
 class BLIP2HFModelWrapper:
     def __init__(self, root_dir, device, variant="blip2"):
         self.variant = variant
+        self.failed_count = 0
         self.root_dir = root_dir
         # Architectures                  Types
         # ==================================================
@@ -751,30 +752,40 @@ class BLIP2HFModelWrapper:
             where N is the number of test cases, K is the number of image options per the test case,
             and L is the number of caption options per the test case.
         """
-        t2i_scores, i2t_scores = [], []
+        correct_count = 0
+        t2i_scores = np.array([],dtype=np.float64).reshape(0,4)
+        answer2id = {"A" : 0, "B": 1,"C": 2,"D": 3}
         # loss_fct = CrossEntropyLoss(reduction="none")
         batch_size = 1
         for batch in tqdm(joint_loader):
             # a+=1
             # if a == 2:
             #     break
-            scores = torch.zeros(batch_size,batch_size , 4)
+            # scores = torch.zeros(batch_size,number_of_images , 4)
+            scores = torch.zeros(batch_size , 4)
             choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
             processed_captions = [f"Q: {batch['question']} A: {c}" for c in choices]
             data_path = os.path.join(image_dir, batch['data_id'])
-            raw_image = Image.open(open(data_path, "rb")).convert("RGB")
+            try:
+                raw_image = Image.open(open(data_path, "rb")).convert("RGB")
+            except FileNotFoundError:
+                self.failed_count = self.failed_count + 1
+                continue
+            except Exception as e:
+                print(e)
+                continue
             imgs = self.processor(images=raw_image)
             # since we are working with BS =1 here only iterate over captions
             for c_ind, t_option in enumerate(processed_captions):
                 caps = self.processor(text=t_option)
                 for b_ind in range(batch_size):
-                    input_data = {'pixel_values': torch.tensor([imgs['pixel_values']], device='cuda'),
+                    input_data = {'pixel_values': torch.tensor([imgs['pixel_values']], device='cuda').squeeze(0),
                                     'input_ids': torch.tensor([caps['input_ids']], device='cuda'),
                                     'attention_mask': torch.tensor([caps['attention_mask']], device='cuda'),
                                     'labels': torch.tensor([caps['input_ids']], device='cuda'),
                                     }
                     out_dict = self.model(**input_data, return_dict=True)
-                    scores[b_ind, i_ind, c_ind] = -out_dict['loss']
+                    scores[b_ind, c_ind] = -out_dict['loss']
 
                 # out_dict = self.model(imgs, *caps, return_dict=True) # TODO: make sure the loss is not avergaed.
                 # labels = caps['input_ids']
@@ -789,7 +800,13 @@ class BLIP2HFModelWrapper:
                 # loss = loss_fct(shift_logits.view(-1, self.model.config.text_config.vocab_size), shift_labels.view(-1))
                 #
                 # scores[:, i_ind, c_ind] = -loss
-        t2i_scores.append(scores.to('cpu').numpy())
+            results = scores.to('cpu').numpy()
+            # t2i_scores = np.stack(t2i_scores,results)
+            answer_id = answer2id[batch['answer']]
+            indexes = np.argsort(results,axis=0)
+            correct = indexes[0,0] == answer_id
+            if correct:
+                correct_count += 1
 
         t2i_scores = np.concatenate(t2i_scores, axis=0)  # N x N_t x N_i
         # i2t_scores = np.transpose(t2i_scores, (0, 2, 1))  # N x N_i x N_t

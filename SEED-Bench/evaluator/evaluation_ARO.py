@@ -33,6 +33,7 @@ download_urls = {
 class BLIPModelWrapper:
     def _init_(self, root_dir, device, variant="blip-flickr-base"):
         self.variant = variant
+        self.correct_count = 0
         self.root_dir = root_dir
         self.config_path = os.path.join(root_dir, f"{self.variant}-config")
         self.model_path = os.path.join(root_dir, f"{self.variant}.pth")
@@ -538,6 +539,7 @@ class BLIP2HFModelWrapper:
     def __init__(self, root_dir, device, variant="blip2"):
         self.variant = variant
         self.failed_count = 0
+        self.correct_count = 0
         self.root_dir = root_dir
         # Architectures                  Types
         # ==================================================
@@ -752,7 +754,7 @@ class BLIP2HFModelWrapper:
             where N is the number of test cases, K is the number of image options per the test case,
             and L is the number of caption options per the test case.
         """
-        correct_count = 0
+        
         t2i_scores = np.array([],dtype=np.float64).reshape(0,4)
         answer2id = {"A" : 0, "B": 1,"C": 2,"D": 3}
         # loss_fct = CrossEntropyLoss(reduction="none")
@@ -785,7 +787,7 @@ class BLIP2HFModelWrapper:
                                     'labels': torch.tensor([caps['input_ids']], device='cuda'),
                                     }
                     out_dict = self.model(**input_data, return_dict=True)
-                    scores[b_ind, c_ind] = -out_dict['loss']
+                    scores[b_ind, c_ind] = out_dict['loss']
 
                 # out_dict = self.model(imgs, *caps, return_dict=True) # TODO: make sure the loss is not avergaed.
                 # labels = caps['input_ids']
@@ -803,13 +805,16 @@ class BLIP2HFModelWrapper:
             results = scores.to('cpu').numpy()
             # t2i_scores = np.stack(t2i_scores,results)
             answer_id = answer2id[batch['answer']]
-            indexes = np.argsort(results,axis=0)
+            indexes = np.argsort(results,axis=1)
             correct = indexes[0,0] == answer_id
             if correct:
-                correct_count += 1
+                self.correct_count += 1
 
         t2i_scores = np.concatenate(t2i_scores, axis=0)  # N x N_t x N_i
         # i2t_scores = np.transpose(t2i_scores, (0, 2, 1))  # N x N_i x N_t
         # i2t_scores = np.concatenate(i2t_scores, axis=0)  # N x N_i x N_t
         # print(t2i_scores.shape, i2t_scores.shape)
+        # final result
+        acc = (self.correct_count / (len(joint_loader) - self.failed_count))
+        acc_percent = acc*100.0
         return t2i_scores

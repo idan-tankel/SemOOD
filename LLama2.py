@@ -19,7 +19,7 @@ pipeline = transformers.pipeline(
 )
 
 sequences = pipeline(
-    'I liked "Breaking Bad" and "Band of Brothers". Do you have any recommendations of other shows I might like?\n',
+    '"question": "What type of building is in the image?"\n"answer": "A hotel"\n“Statement”: "The type of the building in the image is a hotel."\n"question": "What type of building is in the image?"\n"answer": "A house"\n“Statement”: "The type of the building in the image is a house."\n"question": "How many towels are in the image?"\n"answer": "One"\n“Statement”: “There is one towel in the image.”\n"question": "How many towels are in the image?"\n"answer": "Two"\n“Statement”: “There are Two towels in the image.”\n"question": "How many towels are in the image?"\n"answer": "Three"\n“Statement”: “There are Three towels in the image.”\n"question": "Based on the scene, what can be inferred about the current state of the game?"\n"answer": "The game is ongoing, and the player is making an impressive play."\n"Statement": "',
     do_sample=True,
     top_k=10,
     num_return_sequences=1,
@@ -27,4 +27,4 @@ sequences = pipeline(
     max_length=200,
 )
 for seq in sequences:
-    print(f"Result: {seq['generated_text']}")
+    print(f"LLama's answer: {seq['generated_text']}")

@@ -4,6 +4,12 @@ import torch
 
 model = "meta-llama/Llama-2-7b-chat-hf"
 
+
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+# model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
+
 tokenizer = AutoTokenizer.from_pretrained(model, use_auth_token=True)
 pipeline = transformers.pipeline(
     "text-generation",

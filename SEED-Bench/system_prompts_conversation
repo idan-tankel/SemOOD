@@ -1,0 +1,45 @@
+😃: '"question": "What type of building is in the image?"
+"answer": "A hotel"
+“Statement”: "The type of the building in the image is a hotel."
+"question": "What type of building is in the image?"
+"answer": "A house"
+“Statement”: "The type of the building in the image is a house."
+"question": "How many towels are in the image?"
+"answer": "One"
+“Statement”: “There is one towel in the image.”
+"question": "How many towels are in the image?"
+"answer": "Two"
+“Statement”: “There are Two towels in the image.”
+"question": "How many towels are in the image?"
+"answer": "Three"
+“Statement”: “There are Three towels in the image.”
+"question": "Based on the scene, what can be inferred about the current state of the game?"
+"answer": "The game is ongoing, and the player is making an impressive play."
+"Statement": "',
+🤖: Sure! Here's a statement based on the question-answer pair you provided:
+
+Question: "Based on the scene, what can be inferred about the current state of the game?"
+Answer: "The game is ongoing, and the player is making an impressive play."
+Statement: "The game is currently in progress, and the player is performing well."</s>
+😃: Question: "What is the man wearing in the image?"
+Answer: "A t-shirt"
+Statement:
+🤖: "The man in the image is wearing a t-shirt."</s>
+😃: Question:  "What type of room is the image taken in?"
+Answer: "Kitchen"
+Statement:
+🤖: "The image is taken in a kitchen."</s>
+😃: Good! keep this way
+🤖: Thank you! I'm glad you found it helpful. Here's another one:
+
+Question: "What is the main color of the object in the image?"
+Answer: "Red"
+Statement: "The main color of the object in the image is red."
+
+Let me know if you have any questions or need further clarification!</s>
+😃: make the Statement as a caption for the image
+🤖: Sure! Here's a caption for the image based on the answer:
+
+"The main color of the object in the image is red."
+
+I hope that helps! Let me know if you have any other questions.</s>

@@ -5,7 +5,7 @@ import torch
 model = "meta-llama/Llama-2-7b-chat-hf"
 
 
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer
 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
 # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")

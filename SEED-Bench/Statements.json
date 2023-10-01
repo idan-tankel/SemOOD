@@ -1,0 +1,28 @@
+{
+    "questions": [
+    {
+        "answer": "B",
+        "choice_a": "Elegant and minimalistic",
+        "choice_b": "Traditional and classic",
+        "choice_c": "Bright and colorful",
+        "choice_d": "Rustic and farmhouse",
+        "data_id": "132352_1612169772",
+        "data_type": "image",
+        "question": "Which of these phrases describes the room's decor?",
+        "question_id": "91233",
+        "question_type_id": 1
+    },
+    {
+        "answer": "B",
+        "choice_a": "The room's decor is elegant and minimalistic.",
+        "choice_b": "The room's decor is traditional and classic.",
+        "choice_c": "The room's decor is bright and colorful",
+        "choice_d": "The room's decor is rustic and farmhouse",
+        "data_id": "132352_1612169772",
+        "data_type": "image",
+        "question": "Which of these phrases describes the room's decor?",
+        "question_id": "91233",
+        "question_type_id": 1
+    }
+]
+}

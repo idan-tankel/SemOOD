@@ -8,7 +8,7 @@ def main():
     evaluator = BLIP2HFModelWrapper(root_dir = "./data" , device="cuda")
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
-    parser.add_argument('--anno_path', type=str, default='SEED-Bench/SEED-Bench.json')
+    parser.add_argument('--anno_path', type=str, default='SEED-Bench/Statements.json')
     parser.add_argument('--output-dir', type=str, default='results')
     args = parser.parse_args()
 

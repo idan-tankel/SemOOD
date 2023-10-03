@@ -2,27 +2,27 @@
     "questions": [
     {
         "answer": "B",
-        "choice_a": "Elegant and minimalistic",
-        "choice_b": "Traditional and classic",
-        "choice_c": "Bright and colorful",
-        "choice_d": "Rustic and farmhouse",
-        "data_id": "132352_1612169772",
+        "choice_a": "In her hand",
+        "choice_b": "On her shoulder",
+        "choice_c": "On the ground",
+        "choice_d": "Inside the man's bag",
+        "data_id": "446767_4187944957",
         "data_type": "image",
-        "question": "Which of these phrases describes the room's decor?",
-        "question_id": "91233",
-        "question_type_id": 1
+        "question": "Where is the woman's blue bag located in the image?",
+        "question_id": "86275",
+        "question_type_id": 4
     },
     {
         "answer": "B",
-        "choice_a": "The room's decor is elegant and minimalistic.",
-        "choice_b": "The room's decor is traditional and classic.",
-        "choice_c": "The room's decor is bright and colorful",
-        "choice_d": "The room's decor is rustic and farmhouse",
-        "data_id": "132352_1612169772",
+        "choice_a": "In her hand",
+        "choice_b": "On her shoulder",
+        "choice_c": "The woman's blue bag is on the ground",
+        "choice_d": "The woman's blue bag is inside the man's bag",
+        "data_id": "446767_4187944957",
         "data_type": "image",
-        "question": "Which of these phrases describes the room's decor?",
-        "question_id": "91233",
-        "question_type_id": 1
+        "question": "Where is the woman's blue bag located in the image?",
+        "question_id": "86275",
+        "question_type_id": 4
     }
 ]
 }

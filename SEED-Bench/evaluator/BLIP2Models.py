@@ -572,8 +572,8 @@ class BLIP2HFModelWrapper:
     def get_scores_for_captions(self, processed_captions: str, procecced_imgs: dict, batch_size: int = 1):
         scores = torch.zeros(batch_size, 4)
         for c_ind, t_option in enumerate(processed_captions):
-            caps = self.processor(text=t_option)
             for b_ind in range(batch_size):
+                caps = self.processor(text=t_option[b_ind])
                 input_data = {'pixel_values': torch.tensor([procecced_imgs['pixel_values']], device='cuda').squeeze(0),
                               'input_ids': torch.tensor([caps['input_ids']], device='cuda'),
                               'attention_mask': torch.tensor([caps['attention_mask']], device='cuda'),
@@ -586,6 +586,17 @@ class BLIP2HFModelWrapper:
     @torch.no_grad()
     def get_retrieval_scores_dataset(self, loader):
         raise NotImplementedError()
+
+    def open_images(self, data_path):
+        try:
+            raw_image = Image.open(open(data_path, "rb")).convert("RGB")
+        except FileNotFoundError:
+            self.failed_count = self.failed_count + 1
+            return None
+        except Exception as e:
+            print(e)
+            return None
+        return raw_image
 
     @torch.no_grad()
     def get_retrieval_scores_batched(self, joint_loader):
@@ -605,19 +616,11 @@ class BLIP2HFModelWrapper:
         batch_size = 1
         results_iterator = []
         for batch in tqdm(joint_loader):
-
             choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
-            processed_captions = [f"Q: {batch['question']} A: {c}" for c in choices]
-            data_path = os.path.join(image_dir, batch['data_id'])
-            try:
-                raw_image = Image.open(open(data_path, "rb")).convert("RGB")
-            except FileNotFoundError:
-                self.failed_count = self.failed_count + 1
-                continue
-            except Exception as e:
-                print(e)
-                continue
-            imgs = self.processor(images=raw_image)
+            processed_captions = [f"Q: {batch_item_q} A: {c}" for c, batch_item_q in zip(choices, batch['question'])]
+            data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
+            raw_images = [self.open_images(x) for x in data_paths]
+            imgs = self.processor(images=raw_images)
             # since we are working with BS =1 here only iterate over captions
             question_based = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
             statement_based = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=choices, batch_size=batch_size)
@@ -625,11 +628,11 @@ class BLIP2HFModelWrapper:
             statement_based = statement_based.cpu().numpy()
             results_iterator.append(question_based)
             results_iterator.append(statement_based)
-            answer_id = answer2id[batch['answer']]
+            answer_id = [answer2id[ans] for ans in batch["answer"]]
             indexes = np.argsort(statement_based, axis=1)
-            correct = indexes[0, 0] == answer_id
-            if correct:
-                self.correct_count += 1
+            correct = indexes[:, 0] == answer_id
+            # the correct is array of shape `(batch_size)`
+            self.correct_count += correct.sum()
 
         t2i_scores = np.concatenate(results_iterator, axis=0)  # N x N_t x N_i
         # i2t_scores = np.transpose(t2i_scores, (0, 2, 1))  # N x N_i x N_t

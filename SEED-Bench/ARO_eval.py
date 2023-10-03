@@ -1,4 +1,4 @@
-from evaluator.evaluation_ARO import BLIP2HFModelWrapper
+from evaluator.BLIP2Models import BLIP2HFModelWrapper
 import argparse
 import os
 import json
@@ -17,13 +17,6 @@ def main():
     dataset = Dataset.from_json(args.anno_path, field='questions')
     dataset.with_format("torch")
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
-    qa_anno = json.load(open(args.anno_path, 'rb'))
-    if 'questions' in qa_anno.keys():
-        qa_anno = qa_anno['questions']
-
-    x = pd.DataFrame(qa_anno)
-    df = x[x.question_type_id == 1]
-    y = df.to_dict(orient="records")
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
     evaluator.get_retrieval_scores_batched(joint_loader=data_loader)

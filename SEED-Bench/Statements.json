@@ -14,15 +14,39 @@
     },
     {
         "answer": "B",
-        "choice_a": "In her hand",
-        "choice_b": "On her shoulder",
+        "choice_a": "The woman's blue bag is in her hand",
+        "choice_b": "The woman's blue bag is on her shoulder",
         "choice_c": "The woman's blue bag is on the ground",
         "choice_d": "The woman's blue bag is inside the man's bag",
         "data_id": "446767_4187944957",
         "data_type": "image",
         "question": "Where is the woman's blue bag located in the image?",
         "question_id": "86275",
-        "question_type_id": 4
+        "question_type_id": 100
+    },
+    {
+        "answer": "D",
+        "choice_a": "One",
+        "choice_b": "Four",
+        "choice_c": "Three",
+        "choice_d": "Two",
+        "data_id": "458979_368194353",
+        "data_type": "image",
+        "question": "How many people are holding hands in the image?",
+        "question_id": "59870",
+        "question_type_id": 5
+    },
+    {
+        "answer": "D",
+        "choice_a": "There is one person holding hands with another person.",
+        "choice_b": "There are four people holding hands with each other.",
+        "choice_c": "There are three people holding hands with each other.",
+        "choice_d": "There are two people holding hands with each other.",
+        "data_id": "458979_368194353",
+        "data_type": "image",
+        "question": "How many people are holding hands in the image?",
+        "question_id": "59870",
+        "question_type_id": 100
     }
 ]
 }

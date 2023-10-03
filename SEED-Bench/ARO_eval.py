@@ -4,7 +4,21 @@ import os
 import json
 import pandas as pd
 from datasets import Dataset
+import wandb
 from torch.utils.data import DataLoader
+
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="SemOOD",
+
+    # track hyperparameters and run metadata
+    config={
+        "learning_rate": 0.02,
+        "architecture": "BLIP2HFModelWrapper",
+        "dataset": "Seed-Bench",
+        "epochs": 1,
+    }
+)
 
 
 def main():
@@ -19,10 +33,12 @@ def main():
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-    evaluator.get_retrieval_scores_batched(joint_loader=data_loader)
+    scores = evaluator.get_retrieval_scores_batched(joint_loader=data_loader)
+    wandb.log({"scores(std)": scores.std()})
 
     # The interface for testing MLLMs
 
 
 if __name__ == '__main__':
     main()
+    wandb.finish()

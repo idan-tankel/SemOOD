@@ -571,13 +571,13 @@ class BLIP2HFModelWrapper:
 
     def get_scores_for_captions(self, processed_captions: str, procecced_imgs: dict, batch_size: int = 1):
         scores = torch.zeros(batch_size, 4)
-        for c_ind, t_option in enumerate(processed_captions):
-            for b_ind in range(batch_size):
-                caps = self.processor(text=t_option[b_ind])
+        for b_ind in range(batch_size):
+            for c_ind, t_option in enumerate(processed_captions[b_ind]):
+                procecced_caption = self.processor(text=t_option)
                 input_data = {'pixel_values': torch.tensor([procecced_imgs['pixel_values']], device='cuda').squeeze(0),
-                              'input_ids': torch.tensor([caps['input_ids']], device='cuda'),
-                              'attention_mask': torch.tensor([caps['attention_mask']], device='cuda'),
-                              'labels': torch.tensor([caps['input_ids']], device='cuda'),
+                              'input_ids': torch.tensor([procecced_caption['input_ids']], device='cuda'),
+                              'attention_mask': torch.tensor([procecced_caption['attention_mask']], device='cuda'),
+                              'labels': torch.tensor([procecced_caption['input_ids']], device='cuda'),
                               }
                 out_dict = self.model(**input_data, return_dict=True)
                 scores[b_ind, c_ind] = out_dict['loss']
@@ -617,19 +617,21 @@ class BLIP2HFModelWrapper:
         results_iterator = []
         for batch in tqdm(joint_loader):
             choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
-            processed_captions = [f"Q: {batch_item_q} A: {c}" for c, batch_item_q in zip(choices, batch['question'])]
+            processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
+            processed_captions = [[f"Q: {question} A: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
             data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
             raw_images = [self.open_images(x) for x in data_paths]
             imgs = self.processor(images=raw_images)
             # since we are working with BS =1 here only iterate over captions
-            question_based = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
-            statement_based = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=choices, batch_size=batch_size)
-            question_based = question_based.cpu().numpy()
-            statement_based = statement_based.cpu().numpy()
-            results_iterator.append(question_based)
-            results_iterator.append(statement_based)
+            question_type_id = int(batch['question_type_id'])
+            if question_type_id == 100:
+                results = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=processed_choices, batch_size=batch_size)
+            else:
+                results = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
+            results = results.cpu().numpy()
+            results_iterator.append(results)
             answer_id = [answer2id[ans] for ans in batch["answer"]]
-            indexes = np.argsort(statement_based, axis=1)
+            indexes = np.argsort(results, axis=1)
             correct = indexes[:, 0] == answer_id
             # the correct is array of shape `(batch_size)`
             self.correct_count += correct.sum()

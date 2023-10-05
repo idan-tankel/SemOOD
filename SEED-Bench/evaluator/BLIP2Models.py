@@ -569,17 +569,20 @@ class BLIP2HFModelWrapper:
     def download(self):
         pass
 
-    def get_scores_for_captions(self, processed_captions: str, procecced_imgs: dict, batch_size: int = 1):
+    def get_scores_for_captions(self, processed_captions: str, processed_imgs: dict, batch_size: int = 1):
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
             for c_ind, t_option in enumerate(processed_captions[b_ind]):
                 procecced_caption = self.processor(text=t_option)
-                input_data = {'pixel_values': torch.tensor([procecced_imgs['pixel_values']], device='cuda').squeeze(0),
+                input_data = {'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'),
                               'input_ids': torch.tensor([procecced_caption['input_ids']], device='cuda'),
                               'attention_mask': torch.tensor([procecced_caption['attention_mask']], device='cuda'),
                               'labels': torch.tensor([procecced_caption['input_ids']], device='cuda'),
                               }
                 out_dict = self.model(**input_data, return_dict=True)
+                free_generated_caption = self.model.generate(**{'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda')})
+                generated_text = self.processor.batch_decode(free_generated_caption, skip_special_tokens=True)[0].strip()
+                print(generated_text)
                 scores[b_ind, c_ind] = out_dict['loss']
         return scores
 
@@ -625,9 +628,9 @@ class BLIP2HFModelWrapper:
             # since we are working with BS =1 here only iterate over captions
             question_type_id = int(batch['question_type_id'])
             if question_type_id == 100:
-                results = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=processed_choices, batch_size=batch_size)
+                results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_choices, batch_size=batch_size)
             else:
-                results = self.get_scores_for_captions(procecced_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
+                results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
             results = results.cpu().numpy()
             results_iterator.append(results)
             answer_id = [answer2id[ans] for ans in batch["answer"]]

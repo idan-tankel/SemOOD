@@ -47,6 +47,30 @@
         "question": "How many people are holding hands in the image?",
         "question_id": "59870",
         "question_type_id": 100
+    },
+    {
+        "answer": "A",
+        "choice_a": "One",
+        "choice_b": "Two",
+        "choice_c": "Three",
+        "choice_d": "Four",
+        "data_id": "1454426_2591111986",
+        "data_type": "image",
+        "question": "How many towels are in the image?",
+        "question_id": "101669",
+        "question_type_id": 5
+    },
+    {
+        "answer": "A",
+        "choice_a": "There is one towels in the image.",
+        "choice_b": "There are two towels in the image.",
+        "choice_c": "There are three towels in the image.",
+        "choice_d": "There are four towels in the image.",
+        "data_id": "1454426_2591111986",
+        "data_type": "image",
+        "question": "How many towels are in the image?",
+        "question_id": "101669",
+        "question_type_id": 100
     }
 ]
 }

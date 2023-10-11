@@ -1,8 +1,6 @@
 from evaluator.BLIP2Models import BLIP2HFModelWrapper
 import argparse
 import os
-import json
-import pandas as pd
 from datasets import Dataset
 import wandb
 from torch.utils.data import DataLoader

@@ -6,6 +6,7 @@ import subprocess
 import numpy as np
 from tqdm import tqdm
 import torch.nn.functional as F
+from torch import nn
 from lavis.models.blip_models import blip_retrieval
 
 # from .blip_utils.blip_retrieval import blip_retrieval
@@ -577,6 +578,16 @@ class BLIP2HFModelWrapper:
 
     @torch.no_grad()
     def get_scores_for_captions(self, processed_captions: str, processed_imgs: dict, batch_size: int = 1):
+        """Get the scores for the captions - compute loss for each caption, where the caption is the label
+
+        Args:
+            processed_captions (str): _description_
+            processed_imgs (dict): _description_
+            batch_size (int, optional): _description_. Defaults to 1.
+
+        Returns:
+            _type_: _description_
+        """
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
             for c_ind, t_option in enumerate(processed_captions[b_ind]):
@@ -587,36 +598,53 @@ class BLIP2HFModelWrapper:
                               'labels': torch.tensor([procecced_caption['input_ids']], device='cuda'),
                               }
                 out_dict = self.model(**input_data, return_dict=True)
-                free_generated_caption = self.model.generate(**{'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'),"output_scores": True})
+                free_generated_caption = self.model.generate(**{'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'), "output_scores": True})
                 generated_text = self.processor.batch_decode(free_generated_caption, skip_special_tokens=True)[0].strip()
                 print(generated_text)
                 scores[b_ind, c_ind] = out_dict['loss']
         return scores
 
     @torch.no_grad()
-    def answer_question_by_text(self, answer, captions, batch_size: int = 1):
+    def answer_question_by_text(self, answers, captions, processed_imgs, batch_size: int = 1):
         """using the text of the free answer find the best matching captions based on the text model
 
         Args:
             answer (_type_): _description_
             captions (_type_): _description_
         """
-        for b_ind in range(batch_size):
-            for c_ind, t_option in enumerate(captions[b_ind]):
-                procecced_caption = self.processor(text=t_option)
+        choices = []
+        for caption, answer, image in zip(captions, answers, processed_imgs["pixel_values"]):
+            # looping over the batch size instead of range
+            losses = torch.empty(0, device=self.device)
+            for caption_ind, text_option in enumerate(caption):
+                procecced_caption = self.processor(text=text_option)
+                processed_answer = self.processor(text=answer)
                 inputs_embeds = self.model.get_input_embeddings()(torch.tensor(procecced_caption['input_ids']).to(self.device))
                 inputs_embeds = inputs_embeds.to(self.device).unsqueeze(0)
-                attention_mask = torch.tensor(procecced_caption['attention_mask']).to(self.device).unsqueeze(0)
+                # attention_mask = torch.tensor(procecced_caption['attention_mask']).to(self.device).unsqueeze(0)
                 # now get only the loss for the generation part
                 # this is the Generation of the OPT
                 # that is not question answering
-                outputs = self.model(
-                    inputs_embeds=inputs_embeds,
-                    attention_mask=attention_mask,
-                    output_scores=True,
-                    output_hidden_states=True
-                )
-        return outputs
+                input_data = {'pixel_values': torch.tensor([image], device='cuda'),
+                              'input_ids': torch.tensor([procecced_caption['input_ids']], device='cuda'),
+                              'attention_mask': torch.tensor([procecced_caption['attention_mask']], device='cuda'),
+                              'labels': torch.tensor([processed_answer['input_ids']], device='cuda'),
+                              }
+                out_dict = self.model(**input_data, return_dict=True)
+                # outputs = self.model.language_model.generate(
+                #     inputs_embeds=inputs_embeds,
+                #     attention_mask=attention_mask,
+                #     output_scores=True,
+                #     output_hidden_states=True,
+                #     return_dict_in_generate=True,
+                #     labels=processed_answer['input_ids']
+                # )
+                losses = torch.cat((losses, out_dict.loss.reshape(-1)))
+                print(out_dict["loss"])
+            choice_for_batch = torch.argmin(losses)
+            print(caption[choice_for_batch])
+            choices.append(choice_for_batch.item())
+        return choices
 
     @torch.no_grad()
     def get_answer_for_question(self, processed_imgs: dict, question: str, batch_size: int = 1):
@@ -641,7 +669,7 @@ class BLIP2HFModelWrapper:
             generate_ids = self.model.generate(**input_data, return_dict=True, penalty_alpha=0.6, top_k=4)
             # here, one step before the decoder as we are using the free answer
             answer = self.processor.batch_decode(generate_ids, skip_special_tokens=True)
-            answers.append(answer)
+            answers += answer
         return answers
 
     @torch.no_grad()
@@ -660,8 +688,9 @@ class BLIP2HFModelWrapper:
         return raw_image
 
     @torch.no_grad()
-    def get_retrieval_scores_batched(self, joint_loader, batch_size=1):
+    def get_retrieval_scores(self, joint_loader, batch_size=1):
         """Computes the scores for each image_option / caption_option pair in the joint loader.
+        That function is kind of the main loop
 
         Args:
             joint_loader (DataLoader): batches have "image_options" and "caption_options" fields.
@@ -691,7 +720,7 @@ class BLIP2HFModelWrapper:
                 results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
             # get answer with only question instruction
             answer = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size)
-            best_match = self.answer_question_by_text(answer=answer, captions=processed_choices)
+            best_match = self.answer_question_by_text(answers=answer, captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
             results = results.cpu().numpy()
             results_iterator.append(results)
             answer_id = [answer2id[ans] for ans in batch["answer"]]

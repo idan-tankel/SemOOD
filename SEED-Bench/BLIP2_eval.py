@@ -31,7 +31,7 @@ def main():
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-    scores = evaluator.get_retrieval_scores_batched(joint_loader=data_loader)
+    scores = evaluator.get_retrieval_scores(joint_loader=data_loader)
     wandb.log({"scores(std)": scores.std()})
 
     # The interface for testing MLLMs

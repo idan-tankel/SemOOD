@@ -13,18 +13,6 @@
         "question_type_id": 4
     },
     {
-        "answer": "B",
-        "choice_a": "The woman's blue bag is in her hand",
-        "choice_b": "The woman's blue bag is on her shoulder",
-        "choice_c": "The woman's blue bag is on the ground",
-        "choice_d": "The woman's blue bag is inside the man's bag",
-        "data_id": "446767_4187944957",
-        "data_type": "image",
-        "question": "Where is the woman's blue bag located in the image?",
-        "question_id": "86275",
-        "question_type_id": 100
-    },
-    {
         "answer": "D",
         "choice_a": "One",
         "choice_b": "Four",
@@ -36,18 +24,7 @@
         "question_id": "59870",
         "question_type_id": 5
     },
-    {
-        "answer": "D",
-        "choice_a": "There is one person holding hands with another person.",
-        "choice_b": "There are four people holding hands with each other.",
-        "choice_c": "There are three people holding hands with each other.",
-        "choice_d": "There are two people holding hands with each other.",
-        "data_id": "458979_368194353",
-        "data_type": "image",
-        "question": "How many people are holding hands in the image?",
-        "question_id": "59870",
-        "question_type_id": 100
-    },
+    
     {
         "answer": "A",
         "choice_a": "One",
@@ -59,18 +36,6 @@
         "question": "How many towels are in the image?",
         "question_id": "101669",
         "question_type_id": 5
-    },
-    {
-        "answer": "A",
-        "choice_a": "There is one towels in the image.",
-        "choice_b": "There are two towels in the image.",
-        "choice_c": "There are three towels in the image.",
-        "choice_d": "There are four towels in the image.",
-        "data_id": "1454426_2591111986",
-        "data_type": "image",
-        "question": "How many towels are in the image?",
-        "question_id": "101669",
-        "question_type_id": 100
     }
 ]
 }

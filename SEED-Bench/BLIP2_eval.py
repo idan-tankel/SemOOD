@@ -23,7 +23,7 @@ def main():
     evaluator = BLIP2HFModelWrapper(root_dir="./data", device="cuda")
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
-    parser.add_argument('--anno_path', type=str, default='SEED-Bench/Statements.json')
+    parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output-dir', type=str, default='results')
     args = parser.parse_args()
     dataset = Dataset.from_json(args.anno_path, field='questions')
@@ -31,8 +31,9 @@ def main():
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-    scores = evaluator.get_retrieval_scores(joint_loader=data_loader)
+    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader)
     wandb.log({"scores(std)": scores.std()})
+    wandb.log({"evaluator(acc)": acc_percent})
 
     # The interface for testing MLLMs
 

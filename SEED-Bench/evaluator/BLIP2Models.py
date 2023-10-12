@@ -1,4 +1,5 @@
 from PIL import Image
+import wandb
 import os
 import torch
 import yaml
@@ -613,7 +614,8 @@ class BLIP2HFModelWrapper:
             captions (_type_): _description_
         """
         choices = []
-        for caption, answer, image in zip(captions, answers, processed_imgs["pixel_values"]):
+        scores = torch.zeros((batch_size, 4), device=self.device)
+        for batch_index, (caption, answer, image) in enumerate(zip(captions, answers, processed_imgs["pixel_values"])):
             # looping over the batch size instead of range
             losses = torch.empty(0, device=self.device)
             for caption_ind, text_option in enumerate(caption):
@@ -641,10 +643,11 @@ class BLIP2HFModelWrapper:
                 # )
                 losses = torch.cat((losses, out_dict.loss.reshape(-1)))
                 print(out_dict["loss"])
+                scores[batch_index, caption_ind] = out_dict.loss
             choice_for_batch = torch.argmin(losses)
             print(caption[choice_for_batch])
             choices.append(choice_for_batch.item())
-        return choices
+        return scores, choices
 
     @torch.no_grad()
     def get_answer_for_question(self, processed_imgs: dict, question: str, batch_size: int = 1):
@@ -704,36 +707,46 @@ class BLIP2HFModelWrapper:
         t2i_scores = np.array([], dtype=np.float64).reshape(0, 4)
         answer2id = {"A": 0, "B": 1, "C": 2, "D": 3}
         results_iterator = []
-        for batch in tqdm(joint_loader):
-            choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
-            processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
-            processed_captions = [[f"Q: {question} A: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
-            question_captions = [f"Q: {question} A:" for question_index, question in enumerate(batch['question'])]
-            data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
-            raw_images = [self.open_images(x) for x in data_paths]
-            imgs = self.processor(images=raw_images)
-            # since we are working with BS =1 here only iterate over captions
-            question_type_id = int(batch['question_type_id'])
-            if question_type_id == 100:
-                results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_choices, batch_size=batch_size)
-            else:
-                results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
-            # get answer with only question instruction
-            answer = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size)
-            best_match = self.answer_question_by_text(answers=answer, captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
-            results = results.cpu().numpy()
-            results_iterator.append(results)
-            answer_id = [answer2id[ans] for ans in batch["answer"]]
-            indexes = np.argsort(results, axis=1)
-            correct = indexes[:, 0] == answer_id
-            # the correct is array of shape `(batch_size)`
-            self.correct_count += correct.sum()
+        with tqdm(
+            bar_format="CorrectCount: {postfix} | Elapsed: {elapsed} | {rate_fmt}"
+        ) as t:
+            for batch in tqdm(joint_loader):
+                choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
+                processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
+                processed_captions = [[f"Q: {question} A: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
+                question_captions = [f"Q: {question} A:" for question_index, question in enumerate(batch['question'])]
+                data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
+                raw_images = [self.open_images(x) for x in data_paths]
+                try:
+                    imgs = self.processor(images=raw_images)
+                except Exception as e:
+                    self.failed_count = self.failed_count + 1
+                    continue
+
+                # since we are working with BS =1 here only iterate over captions
+                question_type_id = int(batch['question_type_id'])
+                if question_type_id == 100:
+                    results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_choices, batch_size=batch_size)
+                else:
+                    results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
+                # get answer with only question instruction
+                # new method
+                answer = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size)
+                results, best_match = self.answer_question_by_text(answers=answer, captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
+                # end of new method
+                results = results.cpu().numpy()
+                results_iterator.append(results)
+                answer_id = [answer2id[ans] for ans in batch["answer"]]
+                indexes = np.argsort(results, axis=1)
+                correct = indexes[:, 0] == answer_id
+                # the correct is array of shape `(batch_size)`
+                self.correct_count += correct.sum()
+                t.postfix = f"{self.correct_count}%"
+                t.update()
 
         t2i_scores = np.concatenate(results_iterator, axis=0)  # N x N_t x N_i
-        # i2t_scores = np.transpose(t2i_scores, (0, 2, 1))  # N x N_i x N_t
-        # i2t_scores = np.concatenate(i2t_scores, axis=0)  # N x N_i x N_t
-        # print(t2i_scores.shape, i2t_scores.shape)
-        # final result
         acc = (self.correct_count / (len(joint_loader) - self.failed_count))
         acc_percent = acc * 100.0
-        return t2i_scores
+        self.acc = acc_percent
+        wandb.log({"accuracy": acc_percent})
+        return t2i_scores, acc_percent

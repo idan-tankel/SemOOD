@@ -578,7 +578,7 @@ class BLIP2HFModelWrapper:
         pass
 
     @torch.no_grad()
-    def get_scores_for_captions(self, processed_captions: str, processed_imgs: dict, batch_size: int = 1):
+    def get_scores_for_captions(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_quesionts=None):
         """Get the scores for the captions - compute loss for each caption, where the caption is the label
 
         Args:
@@ -591,17 +591,24 @@ class BLIP2HFModelWrapper:
         """
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
-            for c_ind, t_option in enumerate(processed_captions[b_ind]):
+            if batched_quesionts is not None:
+                procecced_question = self.processor(text=batched_quesionts[b_ind])
+                instruction = torch.tensor([procecced_question['input_ids']], device='cuda')
+                attention_mask = torch.tensor([procecced_question['attention_mask']], device='cuda')
+            for c_ind, t_option in enumerate(batched_captions[b_ind]):
                 procecced_caption = self.processor(text=t_option)
+                # in order to use the question as the instruction
+                if instruction is None:
+                    instruction = torch.tensor([procecced_caption['input_ids']], device='cuda')
+                    attention_mask = torch.tensor([procecced_caption['attention_mask']], device='cuda')
                 input_data = {'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'),
-                              'input_ids': torch.tensor([procecced_caption['input_ids']], device='cuda'),
-                              'attention_mask': torch.tensor([procecced_caption['attention_mask']], device='cuda'),
+                              'input_ids': instruction,
+                              'attention_mask': attention_mask,
                               'labels': torch.tensor([procecced_caption['input_ids']], device='cuda'),
                               }
                 out_dict = self.model(**input_data, return_dict=True)
                 free_generated_caption = self.model.generate(**{'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'), "output_scores": True})
-                generated_text = self.processor.batch_decode(free_generated_caption, skip_special_tokens=True)[0].strip()
-                print(generated_text)
+                suggested_caption = self.processor.batch_decode(free_generated_caption, skip_special_tokens=True)[0].strip()
                 scores[b_ind, c_ind] = out_dict['loss']
         return scores
 
@@ -674,7 +681,7 @@ class BLIP2HFModelWrapper:
             }
             generate_ids = self.model.generate(**input_data, return_dict=True, **generate_kwargs)
             # for contrastive mode
-            # 
+            #
             # here, one step before the decoder as we are using the free answer
             answer = self.processor.batch_decode(generate_ids, skip_special_tokens=True)
             # there is always another dimension - since we are looping through the batch
@@ -699,7 +706,7 @@ class BLIP2HFModelWrapper:
         return raw_image
 
     @torch.no_grad()
-    def get_retrieval_scores(self, joint_loader, batch_size=1):
+    def get_retrieval_scores(self, joint_loader, batch_size=1, verbose: bool = False):
         """Computes the scores for each image_option / caption_option pair in the joint loader.
         That function is kind of the main loop
 
@@ -722,7 +729,7 @@ class BLIP2HFModelWrapper:
                 choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
                 processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
                 processed_captions = [[f"Q: {question} A: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
-                question_captions = [f"Question: {question} Answer:" for question_index, question in enumerate(batch['question'])]
+                question_captions = [f"Question: {question}" for question_index, question in enumerate(batch['question'])]
                 data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
                 raw_images = [self.open_images(x) for x in data_paths]
                 try:
@@ -734,22 +741,23 @@ class BLIP2HFModelWrapper:
                 # since we are working with BS =1 here only iterate over captions
                 question_type_id = int(batch['question_type_id'])
                 if question_type_id == 100:
-                    results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_choices, batch_size=batch_size)
+                    results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_choices, batch_size=batch_size, batched_quesionts=question_captions)
                 else:
-                    results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
+                    results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_choices, batch_size=batch_size, batched_quesionts=question_captions)
                 # get answer with only question instruction
                 # new method
                 answer_by_model = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size)
                 # append the artificial answer to the original data
-                results, best_match = self.answer_question_by_text(answers=answer_by_model, batched_captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
+                # results, best_match = self.answer_question_by_text(answers=answer_by_model, batched_captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
                 # end of new method
                 results = results.cpu().numpy()
                 results_iterator.append(results)
                 answer_id = [answer2id[ans] for ans in batch["answer"]]
                 real_answer = batch.get(fr"choice_{batch['answer'][0].lower()}")
-                print(fr"question caption: {question_captions}")
-                print(fr"answer_by_model: {answer_by_model}")
-                print(fr"real_answer {real_answer}")
+                if verbose:
+                    print(fr"question caption: {question_captions}")
+                    print(fr"answer_by_model: {answer_by_model}")
+                    print(fr"real_answer {real_answer}")
                 indexes = np.argsort(results, axis=1)
                 correct = indexes[:, 0] == answer_id
                 # the correct is array of shape `(batch_size)`

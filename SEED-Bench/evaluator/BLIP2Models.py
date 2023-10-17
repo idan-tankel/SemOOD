@@ -606,7 +606,7 @@ class BLIP2HFModelWrapper:
         return scores
 
     @torch.no_grad()
-    def answer_question_by_text(self, answers, captions, processed_imgs, batch_size: int = 1):
+    def answer_question_by_text(self, answers, batched_captions, processed_imgs, batch_size: int = 1):
         """using the text of the free answer find the best matching captions based on the text model
 
         Args:
@@ -615,10 +615,10 @@ class BLIP2HFModelWrapper:
         """
         choices = []
         scores = torch.zeros((batch_size, 4), device=self.device)
-        for batch_index, (caption, answer, image) in enumerate(zip(captions, answers, processed_imgs["pixel_values"])):
+        for batch_index, (captions, answer, image) in enumerate(zip(batched_captions, answers, processed_imgs["pixel_values"])):
             # looping over the batch size instead of range
             losses = torch.empty(0, device=self.device)
-            for caption_ind, text_option in enumerate(caption):
+            for caption_ind, text_option in enumerate(captions):
                 procecced_caption = self.processor(text=text_option)
                 processed_answer = self.processor(text=answer)
                 inputs_embeds = self.model.get_input_embeddings()(torch.tensor(procecced_caption['input_ids']).to(self.device))
@@ -627,25 +627,24 @@ class BLIP2HFModelWrapper:
                 # now get only the loss for the generation part
                 # this is the Generation of the OPT
                 # that is not question answering
+                attention_mask = torch.tensor([procecced_caption['attention_mask']], device='cuda')
                 input_data = {'pixel_values': torch.tensor([image], device='cuda'),
                               'input_ids': torch.tensor([procecced_caption['input_ids']], device='cuda'),
-                              'attention_mask': torch.tensor([procecced_caption['attention_mask']], device='cuda'),
+                              'attention_mask': attention_mask,
                               'labels': torch.tensor([processed_answer['input_ids']], device='cuda'),
                               }
                 out_dict = self.model(**input_data, return_dict=True)
-                # outputs = self.model.language_model.generate(
-                #     inputs_embeds=inputs_embeds,
-                #     attention_mask=attention_mask,
-                #     output_scores=True,
-                #     output_hidden_states=True,
-                #     return_dict_in_generate=True,
-                #     labels=processed_answer['input_ids']
-                # )
+                outputs = self.model.language_model.generate(
+                    inputs_embeds=inputs_embeds,
+                    attention_mask=attention_mask,
+                    output_scores=True,
+                    output_hidden_states=True,
+                    return_dict_in_generate=True,
+                    labels=processed_answer['input_ids']
+                )
                 losses = torch.cat((losses, out_dict.loss.reshape(-1)))
-                print(out_dict["loss"])
                 scores[batch_index, caption_ind] = out_dict.loss
             choice_for_batch = torch.argmin(losses)
-            print(caption[choice_for_batch])
             choices.append(choice_for_batch.item())
         return scores, choices
 
@@ -669,10 +668,19 @@ class BLIP2HFModelWrapper:
                           'attention_mask': torch.tensor([procecced_caption['attention_mask']], device='cuda')[b_ind],
                           'labels': torch.tensor([procecced_caption['input_ids']], device='cuda')[b_ind],
                           }
-            generate_ids = self.model.generate(**input_data, return_dict=True, penalty_alpha=0.6, top_k=4)
+            generate_kwargs = {
+                "penalty_alpha": 0.6,
+                "top_k": 4
+            }
+            generate_ids = self.model.generate(**input_data, return_dict=True, **generate_kwargs)
+            # for contrastive mode
+            # 
             # here, one step before the decoder as we are using the free answer
             answer = self.processor.batch_decode(generate_ids, skip_special_tokens=True)
+            # there is always another dimension - since we are looping through the batch
+            answer = [ans.rstrip().lstrip() for ans in answer]
             answers += answer
+        # remove spaces and \n
         return answers
 
     @torch.no_grad()
@@ -714,7 +722,7 @@ class BLIP2HFModelWrapper:
                 choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
                 processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
                 processed_captions = [[f"Q: {question} A: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
-                question_captions = [f"Q: {question} A:" for question_index, question in enumerate(batch['question'])]
+                question_captions = [f"Question: {question} Answer:" for question_index, question in enumerate(batch['question'])]
                 data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
                 raw_images = [self.open_images(x) for x in data_paths]
                 try:
@@ -731,17 +739,22 @@ class BLIP2HFModelWrapper:
                     results = self.get_scores_for_captions(processed_imgs=imgs, processed_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
                 # new method
-                answer = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size)
-                results, best_match = self.answer_question_by_text(answers=answer, captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
+                answer_by_model = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size)
+                # append the artificial answer to the original data
+                results, best_match = self.answer_question_by_text(answers=answer_by_model, batched_captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
                 # end of new method
                 results = results.cpu().numpy()
                 results_iterator.append(results)
                 answer_id = [answer2id[ans] for ans in batch["answer"]]
+                real_answer = batch.get(fr"choice_{batch['answer'][0].lower()}")
+                print(fr"question caption: {question_captions}")
+                print(fr"answer_by_model: {answer_by_model}")
+                print(fr"real_answer {real_answer}")
                 indexes = np.argsort(results, axis=1)
                 correct = indexes[:, 0] == answer_id
                 # the correct is array of shape `(batch_size)`
                 self.correct_count += correct.sum()
-                t.postfix = f"{self.correct_count}%"
+                t.postfix = f"Number of Correct examples: {self.correct_count}"
                 t.update()
 
         t2i_scores = np.concatenate(results_iterator, axis=0)  # N x N_t x N_i

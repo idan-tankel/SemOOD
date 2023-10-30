@@ -160,3 +160,5 @@ cython_debug/
 #.idea/
 SEED-Bench/CC3M
 wandb/*
+slurm-*
+settings.json

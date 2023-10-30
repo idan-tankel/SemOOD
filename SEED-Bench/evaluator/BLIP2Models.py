@@ -14,7 +14,7 @@ from lavis.models.blip_models import blip_retrieval
 # from .blip_utils.utils import MetricLogger
 from lavis.models import load_model_and_preprocess
 from transformers import Blip2ForConditionalGeneration, Blip2Processor
-image_dir = "/net/mraid11/export/data/idanta/DownloadConceptualCaptions"
+image_dir = "/net/mraid11/export/data/idanta/DownloadConceptualCaptions/training"
 # All of the below URLs are taken from, and most of the implementation are heavily inspired from the wonderful https://github.com/salesforce/BLIP repo.
 
 download_urls = {
@@ -557,7 +557,8 @@ class BLIP2HFModelWrapper:
         """
         self.variant = variant
         self.failed_count = 0
-        self.correct_count = 0
+        self.positive_count = 0
+        self.negative_count = 0
         self.root_dir = root_dir
         types = {'blip2_t5': 'pretrain_flant5xxl',
                  'blip2': 'pretrained',
@@ -578,7 +579,7 @@ class BLIP2HFModelWrapper:
         pass
 
     @torch.no_grad()
-    def get_scores_for_captions(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_quesionts=None):
+    def get_scores_for_captions(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None):
         """Get the scores for the captions - compute loss for each caption, where the caption is the label
 
         Args:
@@ -591,14 +592,14 @@ class BLIP2HFModelWrapper:
         """
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
-            if batched_quesionts is not None:
-                procecced_question = self.processor(text=batched_quesionts[b_ind])
+            if batched_questions is not None:
+                procecced_question = self.processor(text=batched_questions[b_ind])
                 instruction = torch.tensor([procecced_question['input_ids']], device='cuda')
                 attention_mask = torch.tensor([procecced_question['attention_mask']], device='cuda')
             for c_ind, t_option in enumerate(batched_captions[b_ind]):
                 procecced_caption = self.processor(text=t_option)
                 # in order to use the question as the instruction
-                if batched_quesionts is None:
+                if batched_questions is None:
                     instruction = torch.tensor([procecced_caption['input_ids']], device='cuda')
                     attention_mask = torch.tensor([procecced_caption['attention_mask']], device='cuda')
                 input_data = {'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'),
@@ -607,6 +608,8 @@ class BLIP2HFModelWrapper:
                               'labels': torch.tensor([procecced_caption['input_ids']], device='cuda'),
                               }
                 out_dict = self.model(**input_data, return_dict=True)
+                answer_tokens = self.model.generate(**input_data, max_new_tokens=200)
+                answer = self.processor.batch_decode(answer_tokens)
                 free_generated_caption = self.model.generate(**{'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'), "output_scores": True})
                 suggested_caption = self.processor.batch_decode(free_generated_caption, skip_special_tokens=True)[0].strip()
                 scores[b_ind, c_ind] = out_dict['loss']
@@ -734,7 +737,7 @@ class BLIP2HFModelWrapper:
                 processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
                 processed_captions = [[f"Q: {question} A: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
                 question_captions = [f"Question: {question}" for question_index, question in enumerate(batch['question'])]
-                data_paths = [os.path.join(image_dir,"training", x) for x in batch['data_id']]
+                data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
                 raw_images = [self.open_images(x) for x in data_paths]
                 try:
                     imgs = self.processor(images=raw_images)
@@ -743,11 +746,8 @@ class BLIP2HFModelWrapper:
                     continue
 
                 # since we are working with BS =1 here only iterate over captions
-                question_type_id = int(batch['question_type_id'])
-                if question_type_id == 100:
-                    results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
-                else:
-                    results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
+                question_type_ids = [int(x) for x in batch['question_type_id']]
+                results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
                 # new method
                 answer_by_model = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size,batched_captions=processed_choices)
@@ -765,18 +765,20 @@ class BLIP2HFModelWrapper:
                 indexes = np.argsort(results, axis=1)
                 correct = indexes[:, 0] == answer_id
                 # the correct is array of shape `(batch_size)`
-                self.correct_count += correct.sum()
-                acc = (self.correct_count / (len(joint_loader) - self.failed_count))
+                self.positive_count += correct.sum()
+                self.negative_count += (correct.size - correct.sum())
+                acc = (self.positive_count / (len(joint_loader) - self.failed_count))
                 wandb.log({"acc (cummulative step)": acc})
-                wandb.log({"success (step)": self.correct_count})
+                wandb.log({"Negative (step)": self.negative_count})
+                wandb.log({"success (step)": self.positive_count})
                 wandb.log({"Error (step)": self.failed_count})
-                t.postfix = f"Number of Correct examples: {self.correct_count}"
+                t.postfix = f"Correct: {self.positive_count} Not correct: {self.negative_count} Did not read: {self.failed_count}"
                 t.update()
 
         t2i_scores = np.concatenate(results_iterator, axis=0)  # N x N_t x N_i
-        acc = (self.correct_count / (len(joint_loader) - self.failed_count))
+        acc = (self.positive_count / (len(joint_loader) - self.failed_count))
         acc_percent = acc * 100.0
         self.acc = acc_percent
-        wandb.log({"failed count": self.failed_count})
+        wandb.log({"Error (total)": self.failed_count})
         wandb.log({"accuracy (total)": acc_percent})
         return t2i_scores, acc_percent

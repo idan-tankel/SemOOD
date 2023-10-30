@@ -37,24 +37,32 @@ def main():
         # no hyperparameters were tuned
         config={
             "architecture": evaluator.__class__.__name__,
+            "question_format": "Question:.... Answer:...",
             "dataset": f"Seed-Bench_{task_name}",
             "task_index": args.question_type_id,
             "epochs": 1,  # inference no training
         }
     )
     huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
-    dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
-    dataset = Dataset.from_json(args.anno_path, field='questions')
-    dataset.with_format("torch")
+    huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
+    huggingface_dataset.with_format("torch")
+    dataset = huggingface_dataset["test"]
+    # dataset = Dataset.from_json(args.anno_path, field='questions')
+    # dataset.with_format("torch")
     # filter the dataset and split by the task type
     if args.question_type_id is not None:
-        dataset = dataset.filter(lambda x: x['question_type_id'] == args.question_type_id)
+        dataset = dataset.filter(lambda x: int(x['question_type_id']) == args.question_type_id)
+    if 'segment' in dataset.features:
+        dataset = dataset.remove_columns("segment")
+
+    # loading data
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
     scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader)
     wandb.log({"scores(std)": scores.std()})
     wandb.log({"evaluator(acc)": acc_percent})
+    wandb.log({"total examples": len(data_loader)})
     wandb.log({"total valid examples": len(data_loader) - evaluator.failed_count})
 
     # The interface for testing MLLMs

@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output_dir', type=str, default='results')
-    parser.add_argument('--question_type_id', default=2, type=int)
+    parser.add_argument('--question_type_id', default=7, type=int)
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
     wandb.init(

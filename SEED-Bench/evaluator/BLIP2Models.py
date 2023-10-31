@@ -14,7 +14,7 @@ from lavis.models.blip_models import blip_retrieval
 # from .blip_utils.utils import MetricLogger
 from lavis.models import load_model_and_preprocess
 from transformers import Blip2ForConditionalGeneration, Blip2Processor
-image_dir = "/net/mraid11/export/data/idanta/DownloadConceptualCaptions/training"
+image_dir = "/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
 # All of the below URLs are taken from, and most of the implementation are heavily inspired from the wonderful https://github.com/salesforce/BLIP repo.
 
 download_urls = {
@@ -705,7 +705,7 @@ class BLIP2HFModelWrapper:
         try:
             raw_image = Image.open(open(data_path, "rb")).convert("RGB")
         except FileNotFoundError:
-            self.failed_count = self.failed_count + 1
+            # self.failed_count = self.failed_count + 1
             return None
         except Exception as e:
             print(e)
@@ -735,7 +735,7 @@ class BLIP2HFModelWrapper:
             for batch in tqdm(joint_loader):
                 choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
                 processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
-                processed_captions = [[f"Q: {question} A: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
+                processed_captions = [[f"Question: {question} Answer: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
                 question_captions = [f"Question: {question}" for question_index, question in enumerate(batch['question'])]
                 data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
                 raw_images = [self.open_images(x) for x in data_paths]

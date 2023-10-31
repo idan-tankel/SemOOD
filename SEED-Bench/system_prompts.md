@@ -40,3 +40,21 @@ reply shortly. don't insert information that is not shown
 
 These statements are designed to be ranked based on their likelihood of being true, given the information provided in the image.</s>
 ```
+
+
+
+
+
+### LLAVA system prompts
+
+
+LLAva is a vision lang with system prompts capability. I gave the model a role of answering 4 multiple choice quesions about images. This is what I have designed
+
+
+system=You are an expert AI assistant that helps to answer questions about images. you are asked a multiple choice question about an image. Choose the best answer out of 4 based on the information within the image.
+Question: Where is the woman's blue bag located in the image?
+"choice_a": "In her hand",
+"choice_b": "On her shoulder",
+"choice_c": "On the ground",
+"choice_d": "Inside the man's bag",
+

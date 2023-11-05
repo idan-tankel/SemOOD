@@ -24,3 +24,5 @@ according to a few executions, the prompt
      ...: \n 1.There is a tower in the image\n 2. There is a castle in the image.\n Answer:"
 ```
 returns always A.
+
+https://discuss.huggingface.co/t/trying-to-understand-system-prompts-with-llama-2-and-transformers-interface/59016

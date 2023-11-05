@@ -659,7 +659,7 @@ class BLIP2HFModelWrapper:
         return scores, choices
 
     @torch.no_grad()
-    def get_answer_for_question(self, processed_imgs: dict, question: str, batch_size: int = 1,batched_captions=None):
+    def get_answer_for_question(self, processed_imgs: dict, question: str, batch_size: int = 1, batched_captions=None):
         """Get Answer to the question asked without the multiple choice options
 
         Args:
@@ -676,10 +676,10 @@ class BLIP2HFModelWrapper:
             for c_ind, t_caption in enumerate(batched_captions[b_ind]):
                 preprocceced_option = self.processor(text=t_caption)
                 input_data = {'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'),
-                            'input_ids': torch.tensor([procecced_question['input_ids']], device='cuda')[b_ind],
-                            'attention_mask': torch.tensor([procecced_question['attention_mask']], device='cuda')[b_ind],
-                            'labels': torch.tensor([preprocceced_option['input_ids']], device='cuda')[b_ind],
-                            }
+                              'input_ids': torch.tensor([procecced_question['input_ids']], device='cuda')[b_ind],
+                              'attention_mask': torch.tensor([procecced_question['attention_mask']], device='cuda')[b_ind],
+                              'labels': torch.tensor([preprocceced_option['input_ids']], device='cuda')[b_ind],
+                              }
                 generate_kwargs = {
                     "penalty_alpha": 0.6,
                     "top_k": 4,
@@ -750,7 +750,7 @@ class BLIP2HFModelWrapper:
                 results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
                 # new method
-                answer_by_model = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size,batched_captions=processed_choices)
+                answer_by_model = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size, batched_captions=processed_choices)
                 # append the artificial answer to the original data
                 # results, best_match = self.answer_question_by_text(answers=answer_by_model, batched_captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)
                 # end of new method
@@ -768,10 +768,10 @@ class BLIP2HFModelWrapper:
                 self.positive_count += correct.sum()
                 self.negative_count += (correct.size - correct.sum())
                 acc = (self.positive_count / (len(joint_loader) - self.failed_count))
-                wandb.log({"acc (cummulative step)": acc})
-                wandb.log({"Negative (step)": self.negative_count})
-                wandb.log({"success (step)": self.positive_count})
-                wandb.log({"Error (step)": self.failed_count})
+                wandb.log({"acc (cummulative step)": acc}, on_step=True)
+                wandb.log({"Negative (step)": self.negative_count}, on_step=True)
+                wandb.log({"success (step)": self.positive_count}, on_step=True)
+                wandb.log({"Error (step)": self.failed_count}, on_step=True)
                 t.postfix = f"Correct: {self.positive_count} Not correct: {self.negative_count} Did not read: {self.failed_count}"
                 t.update()
 

@@ -1,6 +1,8 @@
 from transformers import AutoTokenizer
 import transformers
 import torch
+from datasets import load_dataset
+from torch.utils.data import DataLoader
 
 model = "meta-llama/Llama-2-7b-chat-hf"
 
@@ -18,7 +20,7 @@ pipeline = transformers.pipeline(
 
 
 base_prompt = "<s>[INST]\n<<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt}[/INST]"
-base_prompt = """<<SYS>>You are converting a multi-choice question about the image into a 4-choice possible answers of the question: "Which choice is the best possible caption for the image"?. reply a new list of choices, based on the previous ones,matching the question stated.<</SYS>>[INST]User:{text}[/INST]\nAssistant: """
+base_prompt = """<<SYS>>You are converting a multi-choice question about the image into a 4-choice possible sentences. reply a new list of choices, based on the previous ones,matching the question stated.<</SYS>>[INST]User:{text}[/INST]\nAssistant: """
 
 
 def generate(text: str):
@@ -31,12 +33,37 @@ def generate(text: str):
         num_return_sequences=2,
         max_new_tokens=200,
         return_full_text=False,
-        temperature=.9,
+    temperature=0.9,
         top_p=0.95,
         pad_token_id=tokenizer.pad_token_id
     )
     for seq in sequences:
-        print(f"LLama's answer: {seq['generated_text']}")
+        print(f"LLama's 🦙 answer: {seq['generated_text']}")
 
+
+def generate_for_example(example):
+    prompt = f'''"question": "{example['question']}",\n\
+            "choice_a": "{example['choice_a']}",\n\
+            "choice_b": "{example['choice_b']}",\n\
+            "choice_c": "{example['choice_c']}",\n\
+            "choice_d": "{example['choice_d']}"'''
+    example["new"] = generate(prompt)
 
 generate('''"question": "What is the color of the bird in the image?",\n"choice_a": "Gray",\n"choice_b": "White",\n"choice_c": "Black",\n"choice_d": "Brown"''')
+
+
+
+# loop over the generate for the whole dataset
+huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
+huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
+huggingface_dataset.with_format("torch")
+dataset = huggingface_dataset["test"]
+# dataset = Dataset.from_json(args.anno_path, field='questions')
+# dataset.with_format("torch")
+# filter the dataset and split by the task type
+
+# loading data
+data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
+# looping over the dataset, applying generate function using map
+new_dataset = dataset.map(generate_for_example, batched=True, batch_size=1)
+new_dataset[:5]

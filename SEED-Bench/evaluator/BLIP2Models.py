@@ -768,10 +768,10 @@ class BLIP2HFModelWrapper:
                 self.positive_count += correct.sum()
                 self.negative_count += (correct.size - correct.sum())
                 acc = (self.positive_count / (len(joint_loader) - self.failed_count))
-                wandb.log({"acc (cummulative step)": acc}, on_step=True)
-                wandb.log({"Negative (step)": self.negative_count}, on_step=True)
-                wandb.log({"success (step)": self.positive_count}, on_step=True)
-                wandb.log({"Error (step)": self.failed_count}, on_step=True)
+                wandb.log({"acc (cummulative step)": acc})
+                wandb.log({"Negative (step)": self.negative_count})
+                wandb.log({"success (step)": self.positive_count})
+                wandb.log({"Error (step)": self.failed_count})
                 t.postfix = f"Correct: {self.positive_count} Not correct: {self.negative_count} Did not read: {self.failed_count}"
                 t.update()
 

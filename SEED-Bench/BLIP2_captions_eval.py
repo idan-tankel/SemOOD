@@ -2,7 +2,7 @@ from evaluator.BLIP2Models import BLIP2HFModelWrapper
 import argparse
 import os
 import pandas as pd
-from datasets import Dataset, load_dataset, load_from_disk
+from datasets import Dataset, load_dataset
 import wandb
 from torch.utils.data import DataLoader
 task_names = {"Scene Understanding": 1,
@@ -27,7 +27,7 @@ def main():
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output_dir', type=str, default='results')
-    parser.add_argument('--question_type_id', default=3, type=int)
+    parser.add_argument('--question_type_id', default=7, type=int)
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
     wandb.init(
@@ -46,9 +46,8 @@ def main():
     )
     huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
     huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
-    dataset = huggingface_dataset["test"]
-    dataset = load_from_disk("/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/processed")
     huggingface_dataset.with_format("torch")
+    dataset = huggingface_dataset["test"]
     # dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")
     # filter the dataset and split by the task type

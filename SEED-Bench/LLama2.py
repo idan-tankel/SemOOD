@@ -1,9 +1,9 @@
 from transformers import AutoTokenizer
 import transformers
 import torch
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 from torch.utils.data import DataLoader
-
+import os
 model = "meta-llama/Llama-2-7b-chat-hf"
 
 
@@ -30,15 +30,16 @@ def generate(text: str):
         input,
         do_sample=True,
         top_k=50,
-        num_return_sequences=2,
+        num_return_sequences=1,
         max_new_tokens=200,
         return_full_text=False,
-    temperature=0.9,
+        temperature=0.9,
         top_p=0.95,
         pad_token_id=tokenizer.pad_token_id
     )
     for seq in sequences:
         print(f"LLama's 🦙 answer: {seq['generated_text']}")
+    return sequences[0]["generated_text"]
 
 
 def generate_for_example(example):
@@ -48,16 +49,23 @@ def generate_for_example(example):
             "choice_c": "{example['choice_c']}",\n\
             "choice_d": "{example['choice_d']}"'''
     example["new"] = generate(prompt)
+    return example
+
 
 generate('''"question": "What is the color of the bird in the image?",\n"choice_a": "Gray",\n"choice_b": "White",\n"choice_c": "Black",\n"choice_d": "Brown"''')
 
 
-
 # loop over the generate for the whole dataset
 huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
+save_dir = os.path.join(huggingface_data_dir, "rephrased")
+os.makedirs(save_dir, exist_ok=True)
 huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
 huggingface_dataset.with_format("torch")
 dataset = huggingface_dataset["test"]
+dataset = dataset.filter(lambda x: int(x['question_type_id']) == 3)
+# see example here
+# https://huggingface.co/docs/datasets/v2.14.5/en/package_reference/main_classes#datasets.Dataset.filter
+# dataset = dataset.select(range(100))
 # dataset = Dataset.from_json(args.anno_path, field='questions')
 # dataset.with_format("torch")
 # filter the dataset and split by the task type
@@ -65,5 +73,7 @@ dataset = huggingface_dataset["test"]
 # loading data
 data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 # looping over the dataset, applying generate function using map
-new_dataset = dataset.map(generate_for_example, batched=True, batch_size=1)
-new_dataset[:5]
+new_dataset = dataset.map(generate_for_example)
+new_dataset.save_to_disk(save_dir)
+improved_dataset = load_from_disk(save_dir)
+improved_dataset[:5]

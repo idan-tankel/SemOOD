@@ -737,6 +737,10 @@ class BLIP2HFModelWrapper:
                 processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
                 processed_captions = [[f"Question: {question} Answer: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
                 question_captions = [f"Question: {question}" for question_index, question in enumerate(batch['question'])]
+                # new captions, based on rephrasing the question
+                # based on the filtering the new are not null
+                choices = [batch['new_1'], batch['new_2'], batch['new_3'], batch['new_4']]
+                processed_captions = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
                 data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
                 raw_images = [self.open_images(x) for x in data_paths]
                 try:
@@ -750,6 +754,7 @@ class BLIP2HFModelWrapper:
                 results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
                 # new method
+                # answer by captioning
                 answer_by_model = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size, batched_captions=processed_choices)
                 # append the artificial answer to the original data
                 # results, best_match = self.answer_question_by_text(answers=answer_by_model, batched_captions=processed_choices, processed_imgs=imgs, batch_size=batch_size)

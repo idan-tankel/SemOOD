@@ -4,6 +4,12 @@ import torch
 from datasets import load_dataset, load_from_disk
 from torch.utils.data import DataLoader
 import os
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument('--question_type_id', default=1, type=int)
+args = parser.parse_args()
+
 model = "meta-llama/Llama-2-7b-chat-hf"
 
 
@@ -20,7 +26,7 @@ pipeline = transformers.pipeline(
 
 
 base_prompt = "<s>[INST]\n<<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt}[/INST]"
-base_prompt = """<<SYS>>You are converting a multi-choice question about the image into a 4-choice possible sentences. reply a new list of choices, based on the previous ones,matching the question stated.<</SYS>>[INST]User:{text}[/INST]\nAssistant: """
+base_prompt = """<<SYS>>You are converting a multi-choice question about the image into a 4-choice possible sentences. return new list of choices, based on the previous ones, matching the initial question. keep them on the same original order. Do NOT answer the question / give an extra information that is not written.<</SYS>>[INST]User:{text}[/INST]\nAssistant: """
 
 
 def generate(text: str):
@@ -57,12 +63,12 @@ generate('''"question": "What is the color of the bird in the image?",\n"choice_
 
 # loop over the generate for the whole dataset
 huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
-save_dir = os.path.join(huggingface_data_dir, "rephrased")
+save_dir = os.path.join(huggingface_data_dir, "rephrased", str(args.question_type_id))
 os.makedirs(save_dir, exist_ok=True)
 huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
 huggingface_dataset.with_format("torch")
 dataset = huggingface_dataset["test"]
-dataset = dataset.filter(lambda x: int(x['question_type_id']) == 3)
+dataset = dataset.filter(lambda x: int(x['question_type_id']) == args.question_type_id)
 # see example here
 # https://huggingface.co/docs/datasets/v2.14.5/en/package_reference/main_classes#datasets.Dataset.filter
 # dataset = dataset.select(range(100))
@@ -74,6 +80,7 @@ dataset = dataset.filter(lambda x: int(x['question_type_id']) == 3)
 data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 # looping over the dataset, applying generate function using map
 new_dataset = dataset.map(generate_for_example)
+new_dataset.info.description = rf"was generated using prompt {base_prompt}"
 new_dataset.save_to_disk(save_dir)
 improved_dataset = load_from_disk(save_dir)
 improved_dataset[:5]

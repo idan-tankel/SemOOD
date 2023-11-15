@@ -1,0 +1,39 @@
+answer: C
+choice_a: A hotel
+choice_b: A house
+choice_c: A cabin
+choice_d: A shed
+data_id: '1307737_3736205576'
+data_type: image
+new: '
+
+
+  Based on your previous question, I understand that you are trying to identify the
+  type of building in the image. Here are four possible sentences that could describe
+  the building in the image:
+
+
+  1. The building in the image appears to be a cabin.
+
+  2. The structure in the image looks like a house.
+
+  3. The building in the image appears to be a shed.
+
+  4. The image depicts a hotel.
+
+
+  Please let me know which of these options you would like me to choose.'
+new_1: 'The building in the image appears to be a cabin.
+
+  '
+new_2: 'The structure in the image looks like a house.
+
+  '
+new_3: 'The building in the image appears to be a shed.
+
+  '
+new_4: The image depicts a hotel.
+question: What type of building is in the image?
+question_id: '104933'
+question_type_id: '3'
+segment: null

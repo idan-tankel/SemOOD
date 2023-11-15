@@ -615,6 +615,44 @@ class BLIP2HFModelWrapper:
                 scores[b_ind, c_ind] = out_dict['loss']
         return scores
 
+
+    @torch.no_grad()
+    def answer_by_likelihood_for_captions(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None):
+        """Get the scores for the captions - compute loss for each caption, where the caption is the label
+
+        Args:
+            processed_captions (str): _description_
+            processed_imgs (dict): _description_
+            batch_size (int, optional): _description_. Defaults to 1.
+
+        Returns:
+            _type_: _description_
+        """
+        scores = torch.zeros(batch_size, 4)
+        for b_ind in range(batch_size):
+            if batched_questions is not None:
+                procecced_question = self.processor(text=batched_questions[b_ind])
+                instruction = torch.tensor([procecced_question['input_ids']], device='cuda')
+                attention_mask = torch.tensor([procecced_question['attention_mask']], device='cuda')
+            for c_ind, t_option in enumerate(batched_captions[b_ind]):
+                procecced_caption = self.processor(text=t_option)
+                # in order to use the question as the instruction
+                if batched_questions is None:
+                    instruction = torch.tensor([procecced_caption['input_ids']], device='cuda')
+                    attention_mask = torch.tensor([procecced_caption['attention_mask']], device='cuda')
+                input_data = {'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'),
+                              'labels': torch.tensor([procecced_caption['input_ids']], device='cuda'),
+                              }
+                #   as suggested in the captioning phase of BLIP2 originally., that is a caption of the whole image now
+                out_dict = self.model(**input_data, return_dict=True)
+                answer_tokens = self.model.generate(**input_data, max_new_tokens=200)
+                answer = self.processor.batch_decode(answer_tokens)
+                free_generated_caption = self.model.generate(**{'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'), "output_scores": True})
+                suggested_caption = self.processor.batch_decode(free_generated_caption, skip_special_tokens=True)[0].strip()
+                scores[b_ind, c_ind] = out_dict['loss']
+        return scores
+
+
     @torch.no_grad()
     def answer_question_by_text(self, answers, batched_captions, processed_imgs, batch_size: int = 1):
         """using the text of the free answer find the best matching captions based on the text model
@@ -753,6 +791,7 @@ class BLIP2HFModelWrapper:
                 question_type_ids = [int(x) for x in batch['question_type_id']]
                 results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
+                results = self.answer_by_likelihood_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # new method
                 # answer by captioning
                 answer_by_model = self.get_answer_for_question(processed_imgs=imgs, question=question_captions, batch_size=batch_size, batched_captions=processed_choices)

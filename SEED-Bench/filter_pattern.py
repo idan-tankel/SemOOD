@@ -1,5 +1,10 @@
 from datasets import load_from_disk
 import re
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument('--question_type_id', default=1, type=int)
+args = parser.parse_args()
 
 
 def update_dataset(example):
@@ -18,10 +23,10 @@ def update_dataset(example):
 
 
 def main():
-    save_dir = '/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/rephrased'
+    save_dir = rf'/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/rephrased/{args.question_type_id}'
     dataset = load_from_disk(save_dir)
     dataset = dataset.map(update_dataset)
-    dataset.save_to_disk("/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/processed")
+    dataset.save_to_disk("/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/fully_processed")
 
 
 if __name__ == "__main__":

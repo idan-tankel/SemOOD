@@ -635,20 +635,20 @@ class BLIP2HFModelWrapper:
                 instruction = torch.tensor([procecced_question['input_ids']], device='cuda')
                 attention_mask = torch.tensor([procecced_question['attention_mask']], device='cuda')
             for c_ind, t_option in enumerate(batched_captions[b_ind]):
-                procecced_caption = self.processor(text=t_option)
+                procecced_caption = self.processor(text=t_option.strip())
                 # in order to use the question as the instruction
                 if batched_questions is None:
                     instruction = torch.tensor([procecced_caption['input_ids']], device='cuda')
                     attention_mask = torch.tensor([procecced_caption['attention_mask']], device='cuda')
                 input_data = {'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'),
+                              "input_ids":  torch.tensor([procecced_caption['input_ids']], device='cuda'),
+                              "attention_mask": torch.tensor([procecced_caption['attention_mask']], device='cuda'),
                               'labels': torch.tensor([procecced_caption['input_ids']], device='cuda'),
                               }
                 #   as suggested in the captioning phase of BLIP2 originally., that is a caption of the whole image now
                 out_dict = self.model(**input_data, return_dict=True)
                 answer_tokens = self.model.generate(**input_data, max_new_tokens=200)
                 answer = self.processor.batch_decode(answer_tokens)
-                free_generated_caption = self.model.generate(**{'pixel_values': torch.tensor([processed_imgs['pixel_values'][b_ind]], device='cuda'), "output_scores": True})
-                suggested_caption = self.processor.batch_decode(free_generated_caption, skip_special_tokens=True)[0].strip()
                 scores[b_ind, c_ind] = out_dict['loss']
         return scores
 
@@ -789,7 +789,7 @@ class BLIP2HFModelWrapper:
 
                 # since we are working with BS =1 here only iterate over captions
                 question_type_ids = [int(x) for x in batch['question_type_id']]
-                results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
+                # results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
                 results = self.answer_by_likelihood_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # new method

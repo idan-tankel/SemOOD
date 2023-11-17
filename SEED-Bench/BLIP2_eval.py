@@ -48,7 +48,7 @@ def main():
     huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
     huggingface_dataset.with_format("torch")
     dataset = huggingface_dataset["test"]
-    # dataset = Dataset.from_json(args.anno_path, field='questions')
+#    dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")
     # filter the dataset and split by the task type
     if args.question_type_id is not None:

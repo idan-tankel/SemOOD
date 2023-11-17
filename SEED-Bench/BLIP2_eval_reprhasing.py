@@ -71,9 +71,9 @@ def main():
     wandb.log({"evaluator(acc)": acc_percent})
     wandb.log({"total examples": len(data_loader)})
     wandb.log({"total valid examples": len(data_loader) - evaluator.failed_count})
-    baseline_df = pd.read_csv("SEED-Bench/leaderboard.csv")
-    iris_table = wandb.Table(dataframe=baseline_df)
-    wandb.log({"leaderboard": iris_table})
+    #baseline_df = pd.read_csv("SEED-Bench/leaderboard.csv")
+    #iris_table = wandb.Table(dataframe=baseline_df)
+    # wandb.log({"leaderboard": iris_table})
 
     # The interface for testing MLLMs
 # .*\\n1\W+(.*)\W+\\n2\W+(.*)\W+\\n.*3\W+(.*)\W+\\n4\W+(.*)\W+\\n

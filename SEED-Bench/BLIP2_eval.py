@@ -55,7 +55,7 @@ def main():
         dataset = dataset.filter(lambda x: int(x['question_type_id']) == args.question_type_id)
     if 'segment' in dataset.features:
         dataset = dataset.remove_columns("segment")
-    
+    total = len(dataset)
     if "new_1" in dataset.features:
         # filter to only the new examples
         dataset = dataset.filter(lambda x: x["new_1"] is not None)
@@ -64,7 +64,7 @@ def main():
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader)
+    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader, total_examples_for_task=total)
     wandb.log({"scores(std)": scores.std()})
     wandb.log({"evaluator(acc)": acc_percent})
     wandb.log({"total examples": len(data_loader)})

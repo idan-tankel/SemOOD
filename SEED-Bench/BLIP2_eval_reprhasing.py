@@ -65,12 +65,12 @@ def main():
 
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     # loading data
-    assert len(data_loader) > 0,"data_loader_is_empty. check the filters"
+    assert len(data_loader) > 0, "data_loader_is_empty. check the filters"
     # since the dataset examples without new_1 (did not parse well) are not kept for the statistics
     evaluator.failed_count += (total_examples_for_task - len(data_loader))
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader)
+    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader,total_examples_for_task=total_examples_for_task)
     wandb.log({"scores(std)": scores.std()})
     wandb.log({"evaluator(acc)": acc_percent})
     wandb.log({"total examples": len(data_loader)})

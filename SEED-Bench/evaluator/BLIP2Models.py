@@ -157,7 +157,6 @@ class BLIP2HFModelWrapper:
                 out_dict = self.model(**input_data, return_dict=True)
                 answer_tokens = self.model.generate(
                     **input_data_b,
-                    max_new_tokens=200,
                     return_dict=True,
                     output_hidden_states=True,
                     output_scores=True,
@@ -168,7 +167,7 @@ class BLIP2HFModelWrapper:
                 # Since the generate -> model_generate -> greedy search -> text_model_forward, the logits are based on the lm_head and they are the same as model.forward
                 # these logits are called now "scores", and since no logits_processor exists, they do not lean on history - they are the exact model logits as we know them.
                 # now we may use them to compute the loss as we used to do in the model_forward
-                logits = torch.cat(answer_tokens.scores).unsqueeze(0)
+                logits = torch.cat(answer_tokens.scores, dim=1)
                 # create batch dimension?
                 # still these logits are not the same as out_dict.logits
                 # fix that
@@ -289,7 +288,7 @@ class BLIP2HFModelWrapper:
         return raw_image
 
     @torch.no_grad()
-    def get_retrieval_scores(self, joint_loader, batch_size=1, verbose: bool = False):
+    def get_retrieval_scores(self, joint_loader, batch_size=1, total_examples_for_task: int = -1,verbose: bool = False):
         """Computes the scores for each image_option / caption_option pair in the joint loader.
         That function is kind of the main loop
 
@@ -348,7 +347,7 @@ class BLIP2HFModelWrapper:
                 t.update()
 
         t2i_scores = np.concatenate(results_iterator, axis=0)  # N x N_t x N_i
-        acc = (self.positive_count / (len(joint_loader) - self.failed_count))
+        acc = (self.positive_count / total_examples_for_task)
         acc_percent = acc * 100.0
         self.acc = acc_percent
         pd.DataFrame(global_answers_list).to_csv("answers.csv")

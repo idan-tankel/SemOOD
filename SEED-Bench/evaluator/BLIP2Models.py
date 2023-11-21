@@ -171,15 +171,15 @@ class BLIP2HFModelWrapper:
                 # create batch dimension?
                 # still these logits are not the same as out_dict.logits
                 # fix that
-                labels = torch.tensor([procecced_caption['input_ids']], device='cuda')
-                labels = labels.to(logits.device)
-                logits = logits[:, -labels.size(1):, :]
-                # Shift so that tokens < n predict n
-                shift_logits = logits[..., :-1, :].contiguous()
-                shift_labels = labels[..., 1:].contiguous().to(logits.device)
+                # labels = torch.tensor([procecced_caption['input_ids']], device='cuda')
+                # labels = labels.to(logits.device)
+                # logits = logits[:, -labels.size(1):, :]
+                # # Shift so that tokens < n predict n
+                # shift_logits = logits[..., :-1, :].contiguous()
+                # shift_labels = labels[..., 1:].contiguous().to(logits.device)
 
                 # Flatten the tokens
-                loss_fct = nn.CrossEntropyLoss(reduction="mean")
+                # loss_fct = nn.CrossEntropyLoss(reduction="mean")
 
                 # loss = loss_fct(shift_logits.view(-1, self.model.config.text_config.vocab_size), shift_labels.view(-1))
                 # compute the loss out of the generated strings answer_tokens as in the model_forward

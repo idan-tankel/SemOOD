@@ -1,8 +1,8 @@
-from evaluator_strategies.BLIP2Models import BLIP2HFModelWrapper
+from evaluator_strategies.BLIP2Models import BLIP2HFModelWrapper, Blip2AnswerByConcatination
 import argparse
 import os
 import pandas as pd
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 import wandb
 from torch.utils.data import DataLoader
 task_names = {"Scene Understanding": 1,
@@ -22,7 +22,7 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = (root_dir="./data", device="cuda")
+    evaluator = Blip2AnswerByConcatination(root_dir="./data", device="cuda")
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
@@ -70,8 +70,8 @@ def main():
     wandb.log({"total examples": len(data_loader)})
     wandb.log({"total valid examples": len(data_loader) - evaluator.failed_count})
     baseline_df = pd.read_csv("SEED-Bench/leaderboard.csv")
-    iris_table = wandb.Table(dataframe=baseline_df)
-    wandb.log({"leaderboard": iris_table})
+    # log the table as a SCALAR
+    wandb.log({"Baseline": baseline_df["task_name"]})
 
     # The interface for testing MLLMs
 # .*\\n1\W+(.*)\W+\\n2\W+(.*)\W+\\n.*3\W+(.*)\W+\\n4\W+(.*)\W+\\n

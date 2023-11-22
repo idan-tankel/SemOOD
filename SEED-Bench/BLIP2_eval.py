@@ -1,4 +1,4 @@
-from evaluator_strategies.BLIP2Models import BLIP2HFModelWrapper, Blip2AnswerByConcatination
+from evaluator_strategies.BLIP2Models import Blip2AnswerByConcatination
 import argparse
 import os
 import pandas as pd
@@ -60,6 +60,10 @@ def main():
         # filter to only the new examples
         dataset = dataset.filter(lambda x: x["new_1"] is not None)
 
+    baseline_df = pd.read_csv("SEED-Bench/docs/leaderboard.csv")
+    result_dict = baseline_df.to_dict(orient='records')[0]
+    # log the table as a SCALAR
+    wandb.log({"Baseline": result_dict.get(task_name)})
     # loading data
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     if not os.path.exists(args.output_dir):
@@ -69,9 +73,6 @@ def main():
     wandb.log({"evaluator(acc)": acc_percent})
     wandb.log({"total examples": len(data_loader)})
     wandb.log({"total valid examples": len(data_loader) - evaluator.failed_count})
-    baseline_df = pd.read_csv("SEED-Bench/leaderboard.csv")
-    # log the table as a SCALAR
-    wandb.log({"Baseline": baseline_df["task_name"]})
 
     # The interface for testing MLLMs
 # .*\\n1\W+(.*)\W+\\n2\W+(.*)\W+\\n.*3\W+(.*)\W+\\n4\W+(.*)\W+\\n

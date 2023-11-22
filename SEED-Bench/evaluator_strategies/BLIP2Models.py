@@ -382,9 +382,9 @@ class Blip2AnswerByClassic(BLIP2HFModelWrapper):
         # answers for statistics / histogram
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
-                procecced_question = self.processor(text=batched_questions[b_ind])
-                instruction = torch.tensor([procecced_question['input_ids']], device='cuda')
-                attention_mask = torch.tensor([procecced_question['attention_mask']], device='cuda')
+            procecced_question = self.processor(text=batched_questions[b_ind])
+            instruction = torch.tensor([procecced_question['input_ids']], device='cuda')
+            attention_mask = torch.tensor([procecced_question['attention_mask']], device='cuda')
             for c_ind, t_option in enumerate(batched_captions[b_ind]):
                 procecced_caption = self.processor(text=t_option.strip())
                 # in order to use the question as the instruction

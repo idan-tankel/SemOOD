@@ -44,7 +44,7 @@ class BLIP2HFModelWrapper:
     blip2                          pretrain, coco
     """
 
-    def __init__(self, root_dir, device, names, variant="blip2"):
+    def __init__(self, root_dir, device, names, task_name: str = None ,variant="blip2"):
         """
         __init__ function for BLIP2HFModelWrapper
 
@@ -58,6 +58,7 @@ class BLIP2HFModelWrapper:
         self.positive_count = 0
         self.negative_count = 0
         self.root_dir = root_dir
+        self.task_name = task_name
 
         # Load the BLIP-2 model
         self.model = Blip2ForConditionalGeneration.from_pretrained('Salesforce/blip2-opt-2.7b-coco')
@@ -209,6 +210,7 @@ class BLIP2HFModelWrapper:
         acc = (self.positive_count / total_examples_for_task)
         acc_percent = acc * 100.0
         self.acc = acc_percent
+        pd.DataFrame(t2i_scores).to_csv(rf"scores_for_{self.task_name}_under_{self.__class__.__name__}.csv")
         pd.DataFrame(global_answers_list).to_csv("answers.csv")
         # how many of these answers are the same?
         # TODO change the zero shot captioning loss for the text generation loss on a single label.

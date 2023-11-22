@@ -21,7 +21,6 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = Blip2AnswerByQuestionRephrasing(root_dir="./data", device="cuda", names=["statement_1", "statement_2", "statement_3", "statement_4"])
     parser = ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
@@ -29,6 +28,7 @@ def main():
     parser.add_argument('--question_type_id', default=1, type=int)
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
+    evaluator = Blip2AnswerByQuestionRephrasing(root_dir="./data", device="cuda", names=["statement_1", "statement_2", "statement_3", "statement_4"], task_name=task_name)
     wandb.init(
         # set the wandb project where this run will be logged
         project="SemOOD",
@@ -54,8 +54,8 @@ def main():
     if args.question_type_id is not None:
         dataset = dataset.filter(lambda x: int(x['question_type_id']) == args.question_type_id)
     if 'segment' in dataset.features:
-        dataset = dataset.remove_columns("segment") 
-    
+        dataset = dataset.remove_columns("segment")
+
     total_examples_for_task = len(dataset)
     if "new_1" in dataset.features:
         # filter to only the new examples
@@ -68,7 +68,7 @@ def main():
     evaluator.failed_count += (total_examples_for_task - len(data_loader))
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader,total_examples_for_task=total_examples_for_task)
+    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader, total_examples_for_task=total_examples_for_task)
     wandb.log({"scores(std)": scores.std()})
     wandb.log({"evaluator(acc)": acc_percent})
     wandb.log({"total examples": len(data_loader)})
@@ -77,6 +77,7 @@ def main():
     # The interface for testing MLLMs
 # .*\\n1\W+(.*)\W+\\n2\W+(.*)\W+\\n.*3\W+(.*)\W+\\n4\W+(.*)\W+\\n
 # regex for splitting up the captions from the new prompts
+
 
 if __name__ == '__main__':
     main()

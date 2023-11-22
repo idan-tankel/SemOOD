@@ -48,11 +48,11 @@ def generate_for_example(example):
     prompt_a = f'''"question": "{example['question']}",\n\
             "answer": "{example['choice_a']}"'''
     prompt_b = f'''"question": "{example['question']}",\n\
-            "answer": "{example['choice_a']}"'''
+            "answer": "{example['choice_b']}"'''
     prompt_c = f'''"question": "{example['question']}",\n\
-            "answer": "{example['choice_a']}"'''
+            "answer": "{example['choice_c']}"'''
     prompt_d = f'''"question": "{example['question']}",\n\
-            "answer": "{example['choice_a']}"'''
+            "answer": "{example['choice_d']}"'''
     example["new_1"] = generate(prompt_a)
     example["new_2"] = generate(prompt_b)
     example["new_3"] = generate(prompt_c)

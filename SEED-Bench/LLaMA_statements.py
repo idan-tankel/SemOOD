@@ -53,10 +53,10 @@ def generate_for_example(example):
             "answer": "{example['choice_c']}"'''
     prompt_d = f'''"question": "{example['question']}",\n\
             "answer": "{example['choice_d']}"'''
-    example["new_1"] = generate(prompt_a)
-    example["new_2"] = generate(prompt_b)
-    example["new_3"] = generate(prompt_c)
-    example["new_4"] = generate(prompt_d)
+    example["statement_1"] = generate(prompt_a)
+    example["statement_2"] = generate(prompt_b)
+    example["statement_3"] = generate(prompt_c)
+    example["statement_4"] = generate(prompt_d)
     return example
 
 

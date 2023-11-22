@@ -1,3 +1,4 @@
+from re import I
 from PIL import Image
 import wandb
 import os
@@ -43,7 +44,7 @@ class BLIP2HFModelWrapper:
     blip2                          pretrain, coco
     """
 
-    def __init__(self, root_dir, device, variant="blip2"):
+    def __init__(self, root_dir, device, names, variant="blip2"):
         """
         __init__ function for BLIP2HFModelWrapper
 
@@ -64,13 +65,18 @@ class BLIP2HFModelWrapper:
         # self.model = Blip2Model.from_pretrained('Salesforce/blip2-opt-2.7b-coco')
         # model = Blip2ForConditionalGeneration.from_pretrained('Salesforce/blip2-opt-6.7b')#("Salesforce/blip-image-captioning-base")
         # processor = Blip2Processor.from_pretrained('Salesforce/blip2-opt-2.7b-coco')
-
+        if names is None:
+            names = ["choice_a", "choice_b", "choice_c", "choice_d"]
+        self.names = names
         self.processor = processor
         self.model.to(device)
         self.device = device
 
     def download(self):
         pass
+
+    def batch4choices(self, batch):
+        raise NotImplementedError()
 
     @torch.no_grad()
     def answer(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None, *args, **kwargs):
@@ -163,12 +169,11 @@ class BLIP2HFModelWrapper:
             bar_format="CorrectCount: {postfix} | Elapsed: {elapsed} | {rate_fmt}"
         ) as t:
             for batch in tqdm(joint_loader):
-                choices = [batch['choice_a'], batch['choice_b'], batch['choice_c'], batch['choice_d']]
+                choices = self.batch4choices(batch)
                 processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
                 processed_captions = [[f"Question: {question} Answer: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
                 # new captions, based on rephrasing the question
                 # based on the filtering the new are not null
-                choices = [batch['new_1'], batch['new_2'], batch['new_3'], batch['new_4']]
                 data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
                 raw_images = [self.open_images(x) for x in data_paths]
                 try:
@@ -313,6 +318,9 @@ class Blip2AnswerByQuestionRephrasing(BLIP2HFModelWrapper):
     Args:
         BLIP2HFModelWrapper (_type_): _description_
     """
+    def batch4choices(self, batch):
+        return [batch.get(name) for name in self.names]
+
     @torch.no_grad()
     def answer(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None):
         """Get the scores for the captions - compute loss for each caption, where the caption is the label

@@ -21,12 +21,12 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = Blip2AnswerByQuestionRephrasing(root_dir="./data", device="cuda")
+    evaluator = Blip2AnswerByQuestionRephrasing(root_dir="./data", device="cuda", names=["statement_1", "statement_2", "statement_3", "statement_4"])
     parser = ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output_dir', type=str, default='results')
-    parser.add_argument('--question_type_id', default=8, type=int)
+    parser.add_argument('--question_type_id', default=1, type=int)
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
     wandb.init(

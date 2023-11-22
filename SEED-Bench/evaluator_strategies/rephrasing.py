@@ -1,0 +1,1 @@
+from evaluator_strategies.BLIP2Models import BLIP2HFModelWrapper

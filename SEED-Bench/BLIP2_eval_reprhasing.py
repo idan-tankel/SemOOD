@@ -54,11 +54,9 @@ def main():
     if args.question_type_id is not None:
         dataset = dataset.filter(lambda x: int(x['question_type_id']) == args.question_type_id)
     if 'segment' in dataset.features:
-        dataset = dataset.remove_columns("segment")
+        dataset = dataset.remove_columns("segment") 
     
     total_examples_for_task = len(dataset)
-
-
     if "new_1" in dataset.features:
         # filter to only the new examples
         dataset = dataset.filter(lambda x: x["new_1"] is not None)

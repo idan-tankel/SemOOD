@@ -1,4 +1,4 @@
-from evaluator.BLIP2Models import BLIP2HFModelWrapper
+from evaluator_strategies.BLIP2Models import BLIP2HFModelWrapper
 import argparse
 import os
 import pandas as pd
@@ -22,7 +22,7 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = BLIP2HFModelWrapper(root_dir="./data", device="cuda")
+    evaluator = (root_dir="./data", device="cuda")
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')

@@ -11,6 +11,8 @@ from tqdm import tqdm
 # from .blip_utils.utils import MetricLogger
 from lavis.models import load_model_and_preprocess
 from transformers import Blip2ForConditionalGeneration, Blip2Processor
+import pandas as pd
+import json
 image_dir = "/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
 # All of the below URLs are taken from, and most of the implementation are heavily inspired from the wonderful https://github.com/salesforce/BLIP repo.
 
@@ -44,7 +46,7 @@ class BLIP2HFModelWrapper:
     blip2                          pretrain, coco
     """
 
-    def __init__(self, root_dir, device, names, task_name: str = None ,variant="blip2"):
+    def __init__(self, root_dir, device, names=None, task_name: str = None ,variant="blip2"):
         """
         __init__ function for BLIP2HFModelWrapper
 
@@ -66,9 +68,7 @@ class BLIP2HFModelWrapper:
         # self.model = Blip2Model.from_pretrained('Salesforce/blip2-opt-2.7b-coco')
         # model = Blip2ForConditionalGeneration.from_pretrained('Salesforce/blip2-opt-6.7b')#("Salesforce/blip-image-captioning-base")
         # processor = Blip2Processor.from_pretrained('Salesforce/blip2-opt-2.7b-coco')
-        if names is None:
-            names = ["choice_a", "choice_b", "choice_c", "choice_d"]
-        self.names = names
+        self.names = names if names is not None else ["choice_a", "choice_b", "choice_c", "choice_d"]
         self.processor = processor
         self.model.to(device)
         self.device = device
@@ -77,7 +77,12 @@ class BLIP2HFModelWrapper:
         pass
 
     def batch4choices(self, batch):
-        raise NotImplementedError()
+        if self.names:
+            # for name in self.names:
+            #     yield batch.get(name)
+            return [batch.get(name) for name in self.names]
+        else:
+            raise NotImplementedError("Or define self.names / another method for getting the choices")
 
     @torch.no_grad()
     def answer(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None, *args, **kwargs):
@@ -165,13 +170,13 @@ class BLIP2HFModelWrapper:
         t2i_scores = np.array([], dtype=np.float64).reshape(0, 4)
         answer2id = {"A": 0, "B": 1, "C": 2, "D": 3}
         global_answers_list = []
-        results_iterator = []
+        results_iterator = {}
         with tqdm(
             bar_format="CorrectCount: {postfix} | Elapsed: {elapsed} | {rate_fmt}"
         ) as t:
             for batch in tqdm(joint_loader):
                 choices = self.batch4choices(batch)
-                processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
+                # processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
                 processed_captions = [[f"Question: {question} Answer: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
                 # new captions, based on rephrasing the question
                 # based on the filtering the new are not null
@@ -184,29 +189,32 @@ class BLIP2HFModelWrapper:
                     continue
                 # results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
-                results, answers_list = self.answer(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
+                results = self.answer(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # new method
                 # answer by captioning
-                global_answers_list += answers_list
+                # global_answers_list += answers_list
                 # end of new method
                 results = results.cpu().numpy()
-                results_iterator.append(results)
+                results_iterator[batch["question_id"][0]] = results
+                # Batching!
+                # update the results base on the ID of the answer
+                # save the results for the question
+                batch["prediction"] = results
                 answer_id = [answer2id[ans] for ans in batch["answer"]]
                 real_answer = batch.get(fr"choice_{batch['answer'][0].lower()}")
-                indexes = np.argsort(results, axis=1)
+                indexes = np.argsort(results, axis=-1)
                 correct = indexes[:, 0] == answer_id
                 # the correct is array of shape `(batch_size)`
                 self.positive_count += correct.sum()
                 self.negative_count += (correct.size - correct.sum())
-                acc = (self.positive_count / (len(joint_loader) - self.failed_count))
-                wandb.log({"acc (cummulative step)": acc})
+                acc = (self.positive_count / total_examples_for_task)
+                wandb.log({"acc (step)": acc})
                 wandb.log({"Negative (step)": self.negative_count})
                 wandb.log({"success (step)": self.positive_count})
                 wandb.log({"Error (step)": self.failed_count})
                 t.postfix = f"Correct: {self.positive_count} Not correct: {self.negative_count} Did not read: {self.failed_count}"
                 t.update()
 
-        t2i_scores = np.concatenate(results_iterator, axis=0)  # N x N_t x N_i
         acc = (self.positive_count / total_examples_for_task)
         acc_percent = acc * 100.0
         self.acc = acc_percent
@@ -227,8 +235,8 @@ class Blip2AnswerByConcatination(BLIP2HFModelWrapper):
         BLIP2HFModelWrapper (_type_): _description_
     """
 
-    def __init__(self, root_dir, device, variant="blip2"):
-        super().__init__(root_dir, device, variant)
+    def __init__(self, root_dir, device, names, variant="blip2"):
+        super().__init__(root_dir, device, names, variant)
 
     def answer(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None):
         """Get the scores for the captions - compute loss for each caption, where the caption is the label

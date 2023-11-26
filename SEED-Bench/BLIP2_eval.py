@@ -22,7 +22,7 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = Blip2AnswerByConcatination(root_dir="./data", device="cuda")
+    evaluator = Blip2AnswerByConcatination(root_dir="./data", device="cuda", names=["choice_a", "choice_b", "choice_c", "choice_d"])
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')

@@ -170,6 +170,7 @@ class BLIP2HFModelWrapper:
         t2i_scores = np.array([], dtype=np.float64).reshape(0, 4)
         answer2id = {"A": 0, "B": 1, "C": 2, "D": 3}
         global_answers_list = []
+        index = []  #ugly solution, use distributed datasets map later on 
         results_iterator = {}
         with tqdm(
             bar_format="CorrectCount: {postfix} | Elapsed: {elapsed} | {rate_fmt}"
@@ -195,6 +196,8 @@ class BLIP2HFModelWrapper:
                 # global_answers_list += answers_list
                 # end of new method
                 results = results.cpu().numpy()
+                question_id = batch["question_id"][0]
+                index.append(question_id)
                 results_iterator[batch["question_id"][0]] = results
                 # Batching!
                 # update the results base on the ID of the answer
@@ -214,11 +217,11 @@ class BLIP2HFModelWrapper:
                 wandb.log({"Error (step)": self.failed_count})
                 t.postfix = f"Correct: {self.positive_count} Not correct: {self.negative_count} Did not read: {self.failed_count}"
                 t.update()
-
         acc = (self.positive_count / total_examples_for_task)
         acc_percent = acc * 100.0
         self.acc = acc_percent
-        pd.DataFrame(t2i_scores).to_csv(rf"scores_for_{self.task_name}_under_{self.__class__.__name__}.csv")
+        t2i_scores = np.concatenate(list(results_iterator.values()), axis=0)
+        pd.DataFrame(t2i_scores).to_csv(rf"scores_for_{self.task_name}_under_{self.__class__.__name__}.csv", index=index)
         pd.DataFrame(global_answers_list).to_csv("answers.csv")
         # how many of these answers are the same?
         # TODO change the zero shot captioning loss for the text generation loss on a single label.

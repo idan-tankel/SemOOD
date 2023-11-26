@@ -50,10 +50,10 @@ def generate(text: str):
 
 def generate_for_example(example):
     prompt = f'''"question": "{example['question']}",\n\
-            "choice_a": "{example['choice_a']}",\n\
-            "choice_b": "{example['choice_b']}",\n\
-            "choice_c": "{example['choice_c']}",\n\
-            "choice_d": "{example['choice_d']}"'''
+            1. "{example['choice_a']}",\n\
+            2. "{example['choice_b']}",\n\
+            3. "{example['choice_c']}",\n\
+            4. "{example['choice_d']}"'''
     example["new"] = generate(prompt)
     return example
 
@@ -63,7 +63,7 @@ generate('''"question": "What is the color of the bird in the image?",\n"choice_
 
 # loop over the generate for the whole dataset
 huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
-save_dir = os.path.join(huggingface_data_dir, "rephrased", str(args.question_type_id))
+save_dir = os.path.join(huggingface_data_dir, "rephrased_numbers", str(args.question_type_id))
 os.makedirs(save_dir, exist_ok=True)
 huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
 huggingface_dataset.with_format("torch")

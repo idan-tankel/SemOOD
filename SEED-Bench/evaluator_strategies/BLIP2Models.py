@@ -226,7 +226,8 @@ class BLIP2HFModelWrapper:
         pd.DataFrame(global_answers_list).to_csv("answers.csv")
         # how many of these answers are the same?
         # TODO change the zero shot captioning loss for the text generation loss on a single label.
-        wandb.log({"Error (total)": self.failed_count})
+        # wandb.log({"Error (total)": self.failed_count})
+        # the metric is already reported
         wandb.log({"accuracy (total)": acc_percent})
         return t2i_scores, acc_percent
 

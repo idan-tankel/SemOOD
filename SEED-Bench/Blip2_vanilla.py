@@ -37,7 +37,7 @@ def main():
         # no hyperparameters were tuned
         config={
             "architecture": evaluator.__class__.__name__,
-            "question_format": "Baseline",
+            "question_format": "Baseline-full",
             "dataset": f"Seed-Bench_{task_name}",
             "task_index": args.question_type_id,
             "epochs": 1,  # inference no training
@@ -46,7 +46,7 @@ def main():
     huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
     huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
     dataset = huggingface_dataset["test"]
-    dataset = load_from_disk(rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/fully_processed_fewer_statements/{args.question_type_id}")
+    # dataset = load_from_disk(rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/fully_processed_fewer_statements/{args.question_type_id}")
     huggingface_dataset.with_format("torch")
     # dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")
@@ -57,9 +57,6 @@ def main():
         dataset = dataset.remove_columns("segment")
     
     total_examples_for_task = len(dataset)
-    if "new_1" in dataset.features:
-        # filter to only the new examples
-        dataset = dataset.filter(lambda x: x["new_1"] is not None)
 
     data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     # loading data

@@ -178,7 +178,8 @@ class BLIP2HFModelWrapper:
             for batch in tqdm(joint_loader):
                 choices = self.batch4choices(batch)
                 # processed_choices = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
-                processed_captions = [[f"Question: {question} Answer: {c[question_index]}" for c in choices] for question_index, question in enumerate(batch['question'])]
+                processed_captions = [[c[question_index] for c in choices] for question_index, question in enumerate(batch['question'])]
+                processed_questions = batch['question']  # the processing is now done within the self.answer method
                 # new captions, based on rephrasing the question
                 # based on the filtering the new are not null
                 data_paths = [os.path.join(image_dir, x) for x in batch['data_id']]
@@ -190,7 +191,7 @@ class BLIP2HFModelWrapper:
                     continue
                 # results = self.get_scores_for_captions(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
                 # get answer with only question instruction
-                results = self.answer(processed_imgs=imgs, batched_captions=processed_captions, batch_size=batch_size)
+                results = self.answer(processed_imgs=imgs, batched_captions=processed_captions, batched_questions=processed_questions, batch_size=batch_size)
                 # new method
                 # answer by captioning
                 # global_answers_list += answers_list
@@ -346,7 +347,6 @@ class Blip2AnswerByQuestionRephrasing(BLIP2HFModelWrapper):
         Returns:
             _type_: _description_
         """
-        answers = []
         # answers for statistics / histogram
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
@@ -385,9 +385,8 @@ class Blip2AnswerByQuestionRephrasing(BLIP2HFModelWrapper):
                 # now we may use them to compute the loss as we used to do in the model_forward
                 logits = torch.cat(answer_tokens.scores, dim=1)
                 answer = self.processor.batch_decode(answer_tokens.sequences)
-                answers.append(answer)
                 scores[b_ind, c_ind] = out_dict['loss']
-        return scores, answers
+        return scores
 
 
 
@@ -399,7 +398,6 @@ class Blip2AnswerByClassic(BLIP2HFModelWrapper):
         BLIP2HFModelWrapper (_type_): _description_
     """
     def answer(self, batched_captions: str, processed_imgs: dict, batched_questions: list,batch_size: int = 1):
-        answers = []
         # answers for statistics / histogram
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
@@ -432,7 +430,5 @@ class Blip2AnswerByClassic(BLIP2HFModelWrapper):
                 # Since the generate -> model_generate -> greedy search -> text_model_forward, the logits are based on the lm_head and they are the same as model.forward
                 # these logits are called now "scores", and since no logits_processor exists, they do not lean on history - they are the exact model logits as we know them.
                 # now we may use them to compute the loss as we used to do in the model_forward
-                answer = self.processor.batch_decode(answer_tokens.sequences)
-                answers.append(answer)
                 scores[b_ind, c_ind] = out_dict['loss']
-        return scores, answers
+        return scores

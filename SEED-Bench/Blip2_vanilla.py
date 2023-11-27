@@ -1,4 +1,4 @@
-from evaluator_strategies.BLIP2Models import Blip2AnswerByQuestionRephrasing
+from evaluator_strategies.BLIP2Models import Blip2AnswerByQuestionRephrasing, Blip2AnswerByClassic
 from argparse import ArgumentParser
 import os
 from datasets import load_dataset, load_from_disk
@@ -21,7 +21,7 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = Blip2AnswerByQuestionRephrasing(root_dir="./data", device="cuda",names=["new_1","new_2","new_3","new_4"])
+    evaluator = Blip2AnswerByClassic(root_dir="./data", device="cuda", names=["choice_a", "choice_b", "choice_c", "choice_d"])
     parser = ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
@@ -37,7 +37,7 @@ def main():
         # no hyperparameters were tuned
         config={
             "architecture": evaluator.__class__.__name__,
-            "question_format": "rephrasing using 4 captions; fewer regexes",
+            "question_format": "Baseline",
             "dataset": f"Seed-Bench_{task_name}",
             "task_index": args.question_type_id,
             "epochs": 1,  # inference no training

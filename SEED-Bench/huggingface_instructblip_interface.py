@@ -210,7 +210,6 @@ class MLLM_Tester(nn.Module):
                 targets = output_tokenized.input_ids.masked_fill(
                 output_tokenized.input_ids == self.tokenizer.tokenizer.pad_token_id, -100
                 )
-                this_encoder_atts = output_tokenized.attention_mask
 
                 outputs = self.model.language_model(
                 inputs_embeds=inputs_embeds,

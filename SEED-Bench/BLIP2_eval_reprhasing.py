@@ -1,3 +1,4 @@
+from ast import parse
 from evaluator_strategies.BLIP2Models import Blip2AnswerByQuestionRephrasing
 from argparse import ArgumentParser
 import os
@@ -27,6 +28,7 @@ def main():
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output_dir', type=str, default='results')
     parser.add_argument('--question_type_id', default=8, type=int)
+    parser.add_argument("--description", type=str, default="rephrasing using 4 captions; fewer regexes")
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
     wandb.init(
@@ -37,7 +39,7 @@ def main():
         # no hyperparameters were tuned
         config={
             "architecture": evaluator.__class__.__name__,
-            "question_format": "rephrasing using 4 captions; fewer regexes",
+            "question_format": args.description,
             "dataset": f"Seed-Bench_{task_name}",
             "task_index": args.question_type_id,
             "epochs": 1,  # inference no training

@@ -1,0 +1,26 @@
+<s>[INST] <<SYS>>
+{{ system_prompt }}
+<</SYS>>
+
+{{ user_msg_1 }} [/INST] {{ model_answer_1 }} </s><s>[INST] {{ user_msg_2 }} [/INST]
+
+
+
+'"question": "What type of building is in the image?"
+"answer": "A hotel"
+“Statement”: "The type of the building in the image is a hotel."
+"question": "What type of building is in the image?"
+"answer": "A house"
+“Statement”: "The type of the building in the image is a house."
+"question": "How many towels are in the image?"
+"answer": "One"
+“Statement”: “There is one towel in the image.”
+"question": "How many towels are in the image?"
+"answer": "Two"
+“Statement”: “There are Two towels in the image.”
+"question": "How many towels are in the image?"
+"answer": "Three"
+“Statement”: “There are Three towels in the image.”
+"question": "Based on the scene, what can be inferred about the current state of the game?"
+"answer": "The game is ongoing, and the player is making an impressive play."
+"Statement": "',

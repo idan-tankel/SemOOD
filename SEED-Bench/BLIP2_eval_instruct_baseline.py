@@ -1,4 +1,4 @@
-from evaluator_strategies.BLIP2Models import Blip2AnswerByConcatination
+from evaluator_strategies.BLIP2Models import Blip2AnswerByConcatination,InstructBlipBaseline
 import argparse
 import os
 import pandas as pd
@@ -22,7 +22,7 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = Blip2AnswerByConcatination(root_dir="./data", device="cuda", names=["choice_a", "choice_b", "choice_c", "choice_d"])
+    evaluator = InstructBlipBaseline(root_dir="./data", device="cuda", names=["choice_a", "choice_b", "choice_c", "choice_d"])
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
@@ -38,7 +38,7 @@ def main():
         # no hyperparameters were tuned
         config={
             "architecture": evaluator.__class__.__name__,
-            "question_format": "Question:.... Answer:...",
+            "question_format": "InstructBlip - Question:.... Answer:...",
             "dataset": f"Seed-Bench_{task_name}",
             "task_index": args.question_type_id,
             "epochs": 1,  # inference no training

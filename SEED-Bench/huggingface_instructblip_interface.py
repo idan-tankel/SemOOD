@@ -1,6 +1,5 @@
 import os
 import pdb
-import model
 from PIL import Image
 from torchvision import transforms
 import torch
@@ -16,6 +15,17 @@ import torch
 import torch.nn as nn
 import numpy as np
 from torchvision.transforms.functional import InterpolationMode
+
+MODEL_REGISTRY={
+    "instructblip": {
+        "model_name": "Salesforce/instructblip-flan-t5-xl",
+        "weight_name": "Salesforce/instructblip-flan-t5-xl",
+        "model_type": "mllm"
+        }
+}
+
+def get_model_info(model_name):
+    return MODEL_REGISTRY[model_name]
 
 def normalize():
     mean = (0.48145466, 0.4578275, 0.40821073)
@@ -47,7 +57,7 @@ class MLLM_Tester(nn.Module):
             GroupNormalize(input_mean, input_std)
         ])
         
-        self.model_info = model.get_model_info(model_name)
+        self.model_info = get_model_info(model_name)
         
         print("Loading model & tokenizer")
         self.tokenizer = self.model_info['tokenizer'].from_pretrained(self.model_info['weight_name'])
@@ -225,3 +235,7 @@ class MLLM_Tester(nn.Module):
 
 def build():
     return MLLM_Tester()
+
+
+if __name__ == "__main__":
+    build()

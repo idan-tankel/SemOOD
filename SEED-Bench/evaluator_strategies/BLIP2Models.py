@@ -10,7 +10,7 @@ from tqdm import tqdm
 # from .blip_utils.blip_retrieval import blip_retrieval
 # from .blip_utils.utils import MetricLogger
 from lavis.models import load_model_and_preprocess
-from transformers import Blip2ForConditionalGeneration, Blip2Processor
+from transformers import Blip2ForConditionalGeneration, Blip2Processor, InstructBlipPreTrainedModel,InstructBlipForConditionalGeneration,InstructBlipProcessor
 import pandas as pd
 import json
 image_dir = "/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
@@ -438,8 +438,13 @@ class Blip2AnswerByClassic(BLIP2HFModelWrapper):
 class InstructBlipBaseline(BLIP2HFModelWrapper):
     def __init__(self, root_dir, device, names, variant="blip2"):
         super().__init__(root_dir, device, names, variant)
-        self.model = Blip2ForConditionalGeneration.from_pretrained('Salesforce/blip2-opt-2.7b-coco')
-    
+        # self.model = InstructBlipPreTrainedModel.from_pretrained('Salesforce/instructblip-flan-t5-xl')
+        self.model = InstructBlipForConditionalGeneration.from_pretrained('Salesforce/instructblip-flan-t5-xl').to(device)
+        self.processor = InstructBlipProcessor.from_pretrained('Salesforce/instructblip-flan-t5-xl')
+        # add setup function / use lightning :-)
+        
+
+
     def answer(self, batched_captions: str, processed_imgs: dict, batched_questions: str, batch_size: int = 1):
         """Get the scores for the captions - compute loss for each caption, where the caption is the label
 
@@ -454,13 +459,16 @@ class InstructBlipBaseline(BLIP2HFModelWrapper):
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
             processed_question = f"""Question: {batched_questions[b_ind]}\nAnswer:"""
-            procecced_question = self.processor(text=processed_question,return_tensors="pt", padding="longest")
+            procecced_question = self.processor(text=processed_question,return_tensors="pt", padding="longest").to(self.device)
             # use the builtin query tokens
             input_tokenized = procecced_question
-            query_tokens = self.model.query_tokens.expand(bs, -1, -1)
-            query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(processed_imgs.device)
-            Qformer_atts = torch.cat([query_atts, procecced_question.qformer_attention_mask], dim=1)
-            image_embeds = self.model.vision_model(pixel_values = processed_imgs)[0]
+            query_tokens = self.model.query_tokens.expand(batch_size, -1, -1)
+            query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(self.device)
+            Qformer_atts = torch.cat([query_atts, procecced_question.qformer_attention_mask.to(self.device)], dim=1)
+            
+            pixel_values = torch.tensor(processed_imgs.pixel_values[b_ind]).to(self.device)
+            
+            image_embeds = self.model.vision_model(pixel_values.unsqueeze(0))[0]
             image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image_embeds.device)
             
             query_output = self.model.qformer(
@@ -473,19 +481,19 @@ class InstructBlipBaseline(BLIP2HFModelWrapper):
             )
 
             inputs_t5 = self.model.language_projection(query_output.last_hidden_state[:,:query_tokens.size(1),:])
-            atts_t5 = torch.ones(inputs_t5.size()[:-1], dtype=torch.long).to(image.device)
+            atts_t5 = torch.ones(inputs_t5.size()[:-1], dtype=torch.long).to(self.device)
 
 
             encoder_atts = torch.cat([atts_t5, input_tokenized.attention_mask], dim=1)
         
-            with torch.cuda.amp.autocast(dtype=torch.bfloat16):
-                inputs_embeds = self.model.get_input_embeddings()(input_tokenized.input_ids)
-                inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
+            # with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+            inputs_embeds = self.model.get_input_embeddings()(input_tokenized.input_ids)
+            inputs_embeds = torch.cat([inputs_t5, inputs_embeds], dim=1)
 
             for c_ind, choice in enumerate(batched_captions[b_ind]):
                 output_tokenized = self.processor(text=choice, return_tensors="pt", padding="longest", truncation=True).to(self.device)
                 targets = output_tokenized.input_ids.masked_fill(
-                output_tokenized.input_ids == self.tokenizer.tokenizer.pad_token_id, -100
+                output_tokenized.input_ids == self.processor.tokenizer.pad_token_id, -100
                 )
                 out_dict = self.model.language_model(
                     inputs_embeds=inputs_embeds,

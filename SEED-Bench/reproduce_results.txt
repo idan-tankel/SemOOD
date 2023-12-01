@@ -1,0 +1,11 @@
+Accuracy for each data type:
+Data type 5: 58.40%
+Data type 3: 63.29%
+Data type 1: 60.48% reported leaderboard: 58.9 %
+Data type 2: 58.44% 
+Data type 7: 52.58%
+Data type 8: 46.83%
+Data type 4: 40.29%
+Data type 6: 38.81%
+Data type 9: 28.57%
+Total accuracy: 57.83%

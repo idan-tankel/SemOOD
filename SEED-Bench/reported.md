@@ -1,4 +1,5 @@
 ## Accuracy for each data type
+```txt
 Data type 1: 60.48% leaderboard: 58.9 % paper: 60.29 % huggingface_based_evaluation: 59.151 %
 Data type 2: 58.44% leaderboard: 49.7 % paper: 58.49 % huggingface_based_evaluation: 49.754 % # note this line!
 Data type 3: 63.29% leaderboard: 61.7 % paper: 63.37 % huggingface_based_evaluation: 61.648 %
@@ -9,6 +10,7 @@ Data type 7: 52.58% leaderboard: 47.4 % paper: 51.55 % huggingface_based_evaluat
 Data type 8: 46.83% leaderboard: 55.9 % paper: 45.92 % huggingface_based_evaluation: 55.891 %
 Data type 9: 28.57%
 Total accuracy: 57.83%
+```
 ## remarks:
 - huggingface based results are also at wandb.ai
 - https://wandb.ai/ullmans/SemOOD/table?workspace=user-tankwell under InstructBlipBaseline arch.

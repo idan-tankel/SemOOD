@@ -76,6 +76,7 @@ def main():
 # .*\\n1\W+(.*)\W+\\n2\W+(.*)\W+\\n.*3\W+(.*)\W+\\n4\W+(.*)\W+\\n
 # regex for splitting up the captions from the new prompts
 
+
 if __name__ == '__main__':
     main()
     wandb.finish()

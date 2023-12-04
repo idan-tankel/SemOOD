@@ -1,5 +1,6 @@
 from evaluator_strategies.BLIP2Models import SEEDModelWrapper
 from transformers import InstructBlipForConditionalGeneration, InstructBlipProcessor
+import torch
 
 class InstructBlipModel(SEEDModelWrapper):
     def __init__(self, root_dir, device, names, variant="InstructBLIP"):
@@ -71,7 +72,6 @@ class InstructBlipBaseline(InstructBlipModel):
 
 
 
-    
 class InstructBlipAnswerByRephrasing(InstructBlipModel):
     """Using the rephrasing strategy for instructBlip model inputs.
     The reason there is a different rephrasing class for each model is the ability to define where
@@ -95,8 +95,8 @@ class InstructBlipAnswerByRephrasing(InstructBlipModel):
         """        
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
-            processed_question = f"""Question: {batched_questions[b_ind]}\nAnswer:"""
-            procecced_question = self.processor(text=processed_question,return_tensors="pt", padding="longest").to(self.device)
+            processed_question = batched_questions[b_ind]
+            procecced_question = self.processor(text=processed_question, return_tensors="pt", padding="longest").to(self.device)
             # use the builtin query tokens
             input_tokenized = procecced_question
             query_tokens = self.model.query_tokens.expand(batch_size, -1, -1)

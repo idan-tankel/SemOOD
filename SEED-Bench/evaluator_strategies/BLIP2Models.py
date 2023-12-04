@@ -13,7 +13,7 @@ from lavis.models import load_model_and_preprocess
 from transformers import Blip2ForConditionalGeneration, Blip2Processor, InstructBlipPreTrainedModel,InstructBlipForConditionalGeneration,InstructBlipProcessor
 import pandas as pd
 import json
-image_dir = "/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
+image_dir = "/home/projects/shimon/idanta/SemOOD/SEED-Bench-image"
 # All of the below URLs are taken from, and most of the implementation are heavily inspired from the wonderful https://github.com/salesforce/BLIP repo.
 
 download_urls = {

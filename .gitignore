@@ -168,5 +168,7 @@ settings.json
 .vscode/settings.json
 *.swp
 
-
+SEED-Bench-image*
+AILab-CVC___seed-bench*
+._AILab-CVC___seed-bench*
 data/*

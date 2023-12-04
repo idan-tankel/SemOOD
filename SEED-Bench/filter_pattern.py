@@ -1,10 +1,11 @@
 from math import e
+import os
 from datasets import load_from_disk
 import re
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument('--question_type_id', default=2, type=int)
+parser.add_argument('--question_type_id', default=8, type=int)
 args = parser.parse_args()
 
 
@@ -59,10 +60,12 @@ def update_dataset(example):
 
 
 def main():
-    save_dir = rf'/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/rephrased/{args.question_type_id}'
+    save_dir = rf'/home/projects/shimon/idanta/data/SEED/v1/rephrased/4_at_once/rephrased/{args.question_type_id}'
     dataset = load_from_disk(save_dir)
     dataset = dataset.map(update_dataset)
-    dataset.save_to_disk(rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/fully_processed/{args.question_type_id}")
+    fully_processed_save_dir = f'/home/projects/shimon/idanta/data/SEED/v1/fully_processed/4_at_once/{args.question_type_id}'
+    os.makedirs(fully_processed_save_dir,exist_ok=True)
+    dataset.save_to_disk(fully_processed_save_dir)
 
 
 if __name__ == "__main__":

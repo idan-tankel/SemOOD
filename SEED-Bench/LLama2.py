@@ -7,7 +7,7 @@ import os
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument('--question_type_id', default=1, type=int)
+parser.add_argument('--question_type_id', default=7, type=int)
 args = parser.parse_args()
 
 model = "meta-llama/Llama-2-7b-chat-hf"
@@ -58,14 +58,11 @@ def generate_for_example(example):
     return example
 
 
-generate('''"question": "What is the color of the bird in the image?",\n"choice_a": "Gray",\n"choice_b": "White",\n"choice_c": "Black",\n"choice_d": "Brown"''')
-
-
 # loop over the generate for the whole dataset
-huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
-save_dir = os.path.join(huggingface_data_dir, "rephrased_numbers", str(args.question_type_id))
+huggingface_data_dir = rf"/home/projects/shimon/idanta/data/SEED/v1/rephrased/4_at_once"
+save_dir = os.path.join(huggingface_data_dir, "rephrased", str(args.question_type_id))
 os.makedirs(save_dir, exist_ok=True)
-huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
+huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", data_dir=huggingface_data_dir, split=None)
 huggingface_dataset.with_format("torch")
 dataset = huggingface_dataset["test"]
 dataset = dataset.filter(lambda x: int(x['question_type_id']) == args.question_type_id)
@@ -83,4 +80,3 @@ new_dataset = dataset.map(generate_for_example)
 new_dataset.info.description = rf"was generated using prompt {base_prompt}"
 new_dataset.save_to_disk(save_dir)
 improved_dataset = load_from_disk(save_dir)
-improved_dataset[:5]

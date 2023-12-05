@@ -1,4 +1,4 @@
-from evaluator_strategies.BLIP2Models import Blip2AnswerByConcatination,InstructBlipBaseline
+from evaluator_strategies.BLIP2Models import InstructBlipBaseline
 import argparse
 import os
 import pandas as pd

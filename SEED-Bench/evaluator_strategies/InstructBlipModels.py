@@ -95,13 +95,13 @@ class InstructBlipAnswerByRephrasing(InstructBlipModel):
         """        
         scores = torch.zeros(batch_size, 4)
         for b_ind in range(batch_size):
-            processed_question = batched_questions[b_ind]
-            procecced_question = self.processor(text=processed_question, return_tensors="pt", padding="longest").to(self.device)
+            insruction = "An image that shows"
+            procecced_instruction = self.processor(text=insruction, return_tensors="pt", padding="longest").to(self.device)
             # use the builtin query tokens
-            input_tokenized = procecced_question
+            input_tokenized = procecced_instruction
             query_tokens = self.model.query_tokens.expand(batch_size, -1, -1)
             query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(self.device)
-            Qformer_atts = torch.cat([query_atts, procecced_question.qformer_attention_mask.to(self.device)], dim=1)
+            Qformer_atts = torch.cat([query_atts, procecced_instruction.qformer_attention_mask.to(self.device)], dim=1)
             
             pixel_values = torch.tensor(processed_imgs.pixel_values[b_ind]).to(self.device)
             

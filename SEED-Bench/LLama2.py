@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import transformers
 import torch
 from datasets import load_dataset, load_from_disk
@@ -8,13 +8,14 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument('--question_type_id', default=7, type=int)
+parser.add_argument('--huggingface_data_dir', default=r"/home/idanta/data/SEED/SEED-Bench-image/4_choice_at_once")
 args = parser.parse_args()
 
 model = "meta-llama/Llama-2-7b-chat-hf"
 
 
-# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-# model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+#model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
 
 tokenizer = AutoTokenizer.from_pretrained(model, use_auth_token=True)
 pipeline = transformers.pipeline(
@@ -59,7 +60,7 @@ def generate_for_example(example):
 
 
 # loop over the generate for the whole dataset
-huggingface_data_dir = rf"/home/projects/shimon/idanta/data/SEED/v1/rephrased/4_at_once"
+huggingface_data_dir = args.huggingface_data_dir
 save_dir = os.path.join(huggingface_data_dir, "rephrased", str(args.question_type_id))
 os.makedirs(save_dir, exist_ok=True)
 huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", data_dir=huggingface_data_dir, split=None)

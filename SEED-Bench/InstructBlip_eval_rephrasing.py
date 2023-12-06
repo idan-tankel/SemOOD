@@ -22,12 +22,12 @@ task_ids = {v: k for k, v in task_names.items()}
 
 
 def main():
-    evaluator = InstructBlipAnswerByRephrasing(root_dir="./data", device="cuda",names=["new_1","new_2","new_3","new_4"])
+    evaluator = InstructBlipAnswerByRephrasing(root_dir="./data", device="cuda", names=["new_1","new_2","new_3","new_4"])
     parser = ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output_dir', type=str, default='results')
-    parser.add_argument('--question_type_id', default=7, type=int)
+    parser.add_argument('--question_type_id', default=5, type=int)
     parser.add_argument("--description", type=str, default="rephrasing using 4 captions; fewer regexes")
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
@@ -45,7 +45,7 @@ def main():
             "epochs": 1,  # inference no training
         }
     )
-    dataset = load_from_disk(rf"/home/projects/shimon/idanta/data/SEED/v1/fully_processed/4_at_once/{args.question_type_id}")
+    dataset = load_from_disk(rf"/home/idanta/data/SEED/SEED-Bench-image/fully_processed/{args.question_type_id}")
     # dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")
     # filter the dataset and split by the task type

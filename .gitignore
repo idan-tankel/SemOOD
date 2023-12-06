@@ -172,3 +172,4 @@ SEED-Bench-image*
 AILab-CVC___seed-bench*
 ._AILab-CVC___seed-bench*
 data/*
+scripts/wandb*

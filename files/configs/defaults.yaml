@@ -1,0 +1,17 @@
+data:
+  dataset:
+    name: 'cifar10'
+    data_root: '/home/username/data'
+    local_dataset_folder:  # based on hggingface platform. The previous data_root will be used to load the images themselves
+    train:
+      batch_size: 128
+      shuffle: True
+      num_workers: 4
+    test:
+      batch_size: 128
+      shuffle: False
+      num_workers: 4
+  model:
+    name: 'resnet18'
+    pretrained: True
+    arch: # the local class representing the model

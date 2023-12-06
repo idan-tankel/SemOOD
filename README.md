@@ -28,12 +28,11 @@ returns always A.
 https://discuss.huggingface.co/t/trying-to-understand-system-prompts-with-llama-2-and-transformers-interface/59016
 
 
-
-### Model specifications 
-
-Text model for rephrasing
-
-model = "meta-llama/Llama-2-7b-chat-hf"
+### further notes issues and FAQs
 
 
-``
+For installation and running of LLaMA2 using `transformers` python package (by  Huggingface.co) you will need to create a read token for the LLaMA resource. More information can be found here
+
+[blogpost][llama2blog]
+
+[llama2blog]: https://huggingface.co/blog/llama2#using-transformers

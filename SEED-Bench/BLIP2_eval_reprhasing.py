@@ -27,7 +27,7 @@ def main():
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output_dir', type=str, default='results')
-    parser.add_argument('--question_type_id', default=8, type=int)
+    parser.add_argument('--question_type_id', default=7, type=int)
     parser.add_argument("--description", type=str, default="rephrasing using 4 captions; fewer regexes")
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
@@ -45,11 +45,9 @@ def main():
             "epochs": 1,  # inference no training
         }
     )
-    huggingface_data_dir = rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image"
-    huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", cache_dir=huggingface_data_dir, data_dir=huggingface_data_dir, split=None)
-    dataset = huggingface_dataset["test"]
-    dataset = load_from_disk(rf"/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/fully_processed_fewer_statements/{args.question_type_id}")
-    huggingface_dataset.with_format("torch")
+    fully_processed_data_dir = r"/home/projects/shimon/idanta/data/SEED/v1/fully_processed/4_at_once/"
+    dataset = load_from_disk(os.path.join(fully_processed_data_dir, str(args.question_type_id)))
+    dataset.with_format("torch")
     # dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")
     # filter the dataset and split by the task type
@@ -70,15 +68,12 @@ def main():
     evaluator.failed_count += (total_examples_for_task - len(data_loader))
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader,total_examples_for_task=total_examples_for_task)
+    scores, acc_percent = evaluator.get_retrieval_scores(joint_loader=data_loader, total_examples_for_task=total_examples_for_task)
     wandb.log({"scores(std)": scores.std()})
     wandb.log({"evaluator(acc)": acc_percent})
     wandb.log({"total examples": len(data_loader)})
     wandb.log({"total valid examples": len(data_loader) - evaluator.failed_count})
 
-    # The interface for testing MLLMs
-# .*\\n1\W+(.*)\W+\\n2\W+(.*)\W+\\n.*3\W+(.*)\W+\\n4\W+(.*)\W+\\n
-# regex for splitting up the captions from the new prompts
 
 if __name__ == '__main__':
     main()

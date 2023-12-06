@@ -26,3 +26,14 @@ according to a few executions, the prompt
 returns always A.
 
 https://discuss.huggingface.co/t/trying-to-understand-system-prompts-with-llama-2-and-transformers-interface/59016
+
+
+
+### Model specifications 
+
+Text model for rephrasing
+
+model = "meta-llama/Llama-2-7b-chat-hf"
+
+
+``

@@ -139,3 +139,46 @@ class InstructBlipAnswerByRephrasing(InstructBlipModel):
                     return_dict=True)
                 scores[b_ind, c_ind] = out_dict['loss']
         return scores
+
+
+class IntructBlipEvalByHub(InstructBlipModel):
+    """
+    IntructBlipEvalByHub This class uses the BlipForConditionalGeneration model to calculate the loss as a black box.
+
+    Args:
+        InstructBlipModel (_type_): _description_
+    """
+    def answer(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None, *args, **kwargs):
+        scores = torch.zeros(batch_size, 4)
+        for b_ind in range(batch_size):
+            insruction = "An image that shows"
+            processed_instruction = self.processor(text=insruction, return_tensors="pt", padding="longest").to(self.device)
+            # use the builtin query tokens
+            query_tokens = self.model.query_tokens.expand(batch_size, -1, -1)
+            query_atts = torch.ones(query_tokens.size()[:-1], dtype=torch.long).to(self.device)
+            
+            pixel_values = torch.tensor(processed_imgs.pixel_values[b_ind]).to(self.device).unsqueeze(0)
+            
+            # image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image_embeds.device)
+            # with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+
+            for c_ind, choice in enumerate(batched_captions[b_ind]):
+                output_tokenized = self.processor(text=choice, return_tensors="pt", padding="longest", truncation=True).to(self.device)
+                out_dict = self.model.forward(
+                    pixel_values=pixel_values,
+                    qformer_input_ids=processed_instruction.qformer_input_ids,
+                    qformer_attention_mask=processed_instruction.qformer_attention_mask,
+                    input_ids=output_tokenized.input_ids,
+                    attention_mask=output_tokenized.attention_mask,
+                    return_dict=True,
+                    output_attentions=True,
+                    output_hidden_states=True,
+                    # decoder_attention_mask=encoder_atts,
+                    labels=output_tokenized.input_ids
+                )
+                # verify if the learned tokens in that case are being concatinated to the input
+                # targets = output_tokenized.input_ids.masked_fill(
+                # output_tokenized.input_ids == self.processor.tokenizer.pad_token_id, -100
+                # )
+                scores[b_ind, c_ind] = out_dict['loss']
+        return scores

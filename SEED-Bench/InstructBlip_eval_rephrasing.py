@@ -29,6 +29,7 @@ def main():
     parser.add_argument('--output_dir', type=str, default='results')
     parser.add_argument('--question_type_id', default=5, type=int)
     parser.add_argument("--description", type=str, default="rephrasing using 4 captions; fewer regexes")
+    parser.add_argument('--huggingface_save_folder', default='/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/4_choice_at_once/')
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
     wandb.init(
@@ -45,7 +46,7 @@ def main():
             "epochs": 1,  # inference no training
         }
     )
-    dataset = load_from_disk(rf"/home/idanta/data/SEED/SEED-Bench-image/fully_processed/{args.question_type_id}")
+    dataset = load_from_disk(rf"{args.huggingface_save_folder}/fully_processed/{args.question_type_id}")
     # dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")
     # filter the dataset and split by the task type

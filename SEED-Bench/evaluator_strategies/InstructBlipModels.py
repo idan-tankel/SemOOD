@@ -144,9 +144,6 @@ class InstructBlipAnswerByRephrasing(InstructBlipModel):
 class IntructBlipEvalByHub(InstructBlipModel):
     """
     IntructBlipEvalByHub This class uses the BlipForConditionalGeneration model to calculate the loss as a black box.
-
-    Args:
-        InstructBlipModel (_type_): _description_
     """
     def answer(self, batched_captions: str, processed_imgs: dict, batch_size: int = 1, batched_questions=None, *args, **kwargs):
         scores = torch.zeros(batch_size, 4)

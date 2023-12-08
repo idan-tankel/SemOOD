@@ -173,3 +173,4 @@ AILab-CVC___seed-bench*
 ._AILab-CVC___seed-bench*
 data/*
 scripts/wandb*
+slurm_logs/*

@@ -8,7 +8,8 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument('--question_type_id', default=7, type=int)
-parser.add_argument('--huggingface_data_dir', default=r"/home/idanta/data/SEED/SEED-Bench-image/4_choice_at_once")
+parser.add_argument('--huggingface_data_dir', default=r"/home/idanta/data/SEED/SEED-Bench-image")
+parser.add_argument('--save_dir', default=r"/home/idanta/data/SEED/SEED-Bench-image/new_4_choice_at_once")
 args = parser.parse_args()
 
 model = "meta-llama/Llama-2-7b-chat-hf"
@@ -51,17 +52,17 @@ def generate(text: str):
 
 def generate_for_example(example):
     prompt = f'''"question": "{example['question']}",\n\
-            1. "{example['choice_a']}",\n\
-            2. "{example['choice_b']}",\n\
-            3. "{example['choice_c']}",\n\
-            4. "{example['choice_d']}"'''
+            "choice_a": "{example['choice_a']}",\n\
+            "choice_b": "{example['choice_b']}",\n\
+            "choice_c": "{example['choice_c']}",\n\
+            "choice_d": "{example['choice_d']}"'''
     example["new"] = generate(prompt)
     return example
 
 
 # loop over the generate for the whole dataset
 huggingface_data_dir = args.huggingface_data_dir
-save_dir = os.path.join(huggingface_data_dir, "rephrased", str(args.question_type_id))
+save_dir = os.path.join(args.save_dir, str(args.question_type_id))
 os.makedirs(save_dir, exist_ok=True)
 huggingface_dataset = load_dataset("AILab-CVC/SEED-Bench", data_dir=huggingface_data_dir, split=None)
 huggingface_dataset.with_format("torch")

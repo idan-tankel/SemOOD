@@ -27,9 +27,9 @@ def main():
     parser.add_argument('--model', type=str, default='instruct_blip')
     parser.add_argument('--anno_path', type=str, default='SEED-Bench/Image_questions.json')
     parser.add_argument('--output_dir', type=str, default='results')
-    parser.add_argument('--question_type_id', default=5, type=int)
+    parser.add_argument('--question_type_id', default=1, type=int)
     parser.add_argument("--description", type=str, default="rephrasing using 4 captions; fewer regexes")
-    parser.add_argument('--huggingface_save_folder', default='/net/mraid11/export/data/idanta/SEED/SEED-Bench-image/4_choice_at_once/')
+    parser.add_argument('--huggingface_save_folder', default='/net/mraid11/export/data/idanta/SEED/SEED-Bench-image')
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
     wandb.init(

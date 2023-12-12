@@ -2,7 +2,7 @@ from evaluator_strategies.BLIP2Models import InstructBlipBaseline
 import argparse
 import os
 import pandas as pd
-from datasets import load_dataset
+from datasets import load_dataset,load_from_disk
 import wandb
 from torch.utils.data import DataLoader
 task_names = {"Scene Understanding": 1,

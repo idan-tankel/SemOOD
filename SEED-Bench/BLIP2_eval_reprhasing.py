@@ -1,4 +1,3 @@
-from ast import parse
 from evaluator_strategies.BLIP2Models import Blip2AnswerByQuestionRephrasing
 from argparse import ArgumentParser
 import os
@@ -46,8 +45,8 @@ def main():
             "epochs": 1,  # inference no training
         }
     )
-    fully_processed_data_dir = r"/home/idanta/data/SEED/SEED-Bench-image/fully_processed_new/"
-    dataset = load_from_disk(os.path.join(fully_processed_data_dir, str(args.question_type_id)))
+    # fully_processed_data_dir = r"/home/idanta/data/SEED/SEED-Bench-image/fully_processed_new/"
+    dataset = load_from_disk(os.path.join(args.fully_processed_data_dir, str(args.question_type_id)))
     dataset.with_format("torch")
     # dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")

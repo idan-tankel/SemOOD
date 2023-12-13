@@ -28,7 +28,7 @@ def main():
     parser.add_argument('--output_dir', type=str, default='results')
     parser.add_argument('--question_type_id', default=7, type=int)
     parser.add_argument("--description", type=str, default="rephrasing using 4 captions; fewer regexes")
-    parser.add_argument('--fully_processed_data_path', type=str, default=r"/home/idanta/data/SEED/SEED-Bench-image/fully_processed_new", help="The cached location of the fully processed data dir based on task ID. Offline huggingface caching")
+    parser.add_argument('--fully_processed_data_path', type=str, default=r"/home/idanta/data/SEED/SEED-Bench-image/fully_processed", help="The cached location of the fully processed data dir based on task ID. Offline huggingface caching")
     args = parser.parse_args()
     task_name = task_ids.get(args.question_type_id)
     wandb.init(
@@ -46,7 +46,7 @@ def main():
         }
     )
     # fully_processed_data_dir = r"/home/idanta/data/SEED/SEED-Bench-image/fully_processed_new/"
-    dataset = load_from_disk(os.path.join(args.fully_processed_data_dir, str(args.question_type_id)))
+    dataset = load_from_disk(os.path.join(args.fully_processed_data_path, str(args.question_type_id)))
     dataset.with_format("torch")
     # dataset = Dataset.from_json(args.anno_path, field='questions')
     # dataset.with_format("torch")

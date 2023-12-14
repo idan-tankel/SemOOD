@@ -28,7 +28,7 @@ pipeline = transformers.pipeline(
 
 
 base_prompt = "<s>[INST]\n<<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt}[/INST]"
-base_prompt = """<<SYS>>You are converting a multi-choice question about the image into a 4-choice possible sentences. return new list of choices, based on the previous ones, matching the initial question. keep them on the same original order. Do NOT answer the question / give an extra information that is not written.<</SYS>>[INST]User:{text}[/INST]\nAssistant: """
+base_prompt = """<<SYS>>You are converting a multi-choice question about the image into a 4-choice possible sentences. return new list of choices, based on the previous ones, matching the initial question. keep them on the same original order. Do NOT give an extra information that is not written.<</SYS>>[INST]User:{text}[/INST]\nAssistant: """
 
 
 def generate(text: str):

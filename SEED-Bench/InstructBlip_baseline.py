@@ -1,8 +1,8 @@
-from evaluator_strategies.BLIP2Models import InstructBlipBaseline
+from evaluator_strategies.InstructBlipModels import InstructBlipBaseline
 import argparse
 import os
 import pandas as pd
-from datasets import load_dataset,load_from_disk
+from datasets import load_dataset
 import wandb
 from torch.utils.data import DataLoader
 task_names = {"Scene Understanding": 1,
@@ -56,9 +56,6 @@ def main():
     if 'segment' in dataset.features:
         dataset = dataset.remove_columns("segment")
     total = len(dataset)
-    if "new_1" in dataset.features:
-        # filter to only the new examples
-        dataset = dataset.filter(lambda x: x["new_1"] is not None)
 
     baseline_df = pd.read_csv("SEED-Bench/docs/leaderboard.csv")
     result_dict = baseline_df.to_dict(orient='records')[0]

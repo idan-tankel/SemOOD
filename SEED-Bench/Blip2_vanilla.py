@@ -1,7 +1,7 @@
-from evaluator_strategies.BLIP2Models import Blip2AnswerByQuestionRephrasing, Blip2AnswerByClassic
+from evaluator_strategies.BLIP2Models import Blip2AnswerByClassic
 from argparse import ArgumentParser
 import os
-from datasets import load_dataset, load_from_disk
+from datasets import load_dataset
 import wandb
 from torch.utils.data import DataLoader
 task_names = {"Scene Understanding": 1,

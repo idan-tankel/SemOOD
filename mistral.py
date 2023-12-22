@@ -26,7 +26,7 @@ message = rf'''"question": "{example['question']}",\n\
             "choice_c": "{example['choice_c']}",\n\
             "choice_d": "{example['choice_d']}"'''
 
-instruction = "You are converting a multi-choice question about the image into a 4-choice possible sentences. return new list of choices, based on the previous ones, matching the initial question. keep them on the same original order. Do NOT give an extra information that is not written"
+instruction = "You are converting a multi-choice question about the image into a 4-choice possible sentences. return new list of choices based on the previous ones, matching the initial question. keep them on the same original order. Do NOT give an extra information that is not written"
 messages = [
     {"role": "system", "content": instruction},
     {"role": "user", "content": f"{message}"}

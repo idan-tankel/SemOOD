@@ -86,7 +86,7 @@ python InstructBlip_eval_rephrasing.py --question_type_id 1 --output_dir results
 
 SugarCrepe is a benchmark for faithful vision-language compositionality evaluation. For detailed information, see [sugar-crepe/README.md](sugar-crepe/README.md).
 
-#### Evaluate a Single Model
+#### Basic Usage
 
 ```bash
 cd sugar-crepe
@@ -97,17 +97,7 @@ python main_eval.py --model RN50 \
     --data_root ./data/
 ```
 
-#### Evaluate Multiple Models
-
-To evaluate all 17 pretrained CLIP models included in the paper:
-
-```bash
-cd sugar-crepe
-python main_eval.py --all \
-    --output ./output \
-    --coco_image_root ./data/coco/images/val2017/ \
-    --data_root ./data/
-```
+You can evaluate different models by changing the `--model` and `--pretrained` parameters. The script supports various CLIP models including RN50, RN101, ViT-B-32, ViT-L-14, and others.
 
 ## Data Preparation
 

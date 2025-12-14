@@ -153,16 +153,7 @@ This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) fo
 
 ## Citation
 
-If you use this code in your research, please cite the VADER paper:
-
-```bibtex
-@article{vader2023,
-  title={VADER: Visually Aimed Defeasible Reasoning},
-  author={[Authors]},
-  journal={[Journal/Conference]},
-  year={2023}
-}
-```
+If you use this code in your research, please cite the VADER paper (citation details to be added upon publication).
 
 ## Acknowledgments
 

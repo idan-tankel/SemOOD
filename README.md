@@ -86,18 +86,19 @@ python InstructBlip_eval_rephrasing.py --question_type_id 1 --output_dir results
 
 SugarCrepe is a benchmark for faithful vision-language compositionality evaluation. For detailed information, see [sugar-crepe/README.md](sugar-crepe/README.md).
 
+**Note**: The main_eval.py script in this repository has been modified to use BLIP2 models instead of the original CLIP models used in the SugarCrepe paper.
+
 #### Basic Usage
 
 ```bash
 cd sugar-crepe
-python main_eval.py --model RN50 \
-    --pretrained openai \
+python main_eval.py \
     --output ./output \
     --coco_image_root ./data/coco/images/val2017/ \
     --data_root ./data/
 ```
 
-You can evaluate different models by changing the `--model` and `--pretrained` parameters. The script supports various CLIP models including RN50, RN101, ViT-B-32, ViT-L-14, and others.
+The script evaluates BLIP2 image-text matching models on the SugarCrepe benchmark.
 
 ## Data Preparation
 

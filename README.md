@@ -132,7 +132,7 @@ Download the COCO-2017 validation set from the [official website](https://cocoda
 According to experimental observations, certain prompt formats may exhibit biases. For example, the following prompt structure:
 
 ```python
-"Question: The following is a multiple choice question. Choose an answer by it's number
+"Question: The following is a multiple choice question. Choose an answer by its number
      ...: \n 1.There is a tower in the image\n 2. There is a castle in the image.\n Answer:"
 ```
 

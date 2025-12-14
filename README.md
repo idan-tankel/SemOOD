@@ -1,18 +1,9 @@
-# SemOOD
+# VADER: Visually Aimed Defeasible Reasoning
 ## overview
-    The project currently contains an evaluation code for 2 datasets containing hard examples for Vision language models (VLM's)
-    The 2 known benchmarks are                                                                                 
-- *sugar-crepe* (available at [here](https://github.com/RAIVNLab/sugar-crepe)
- 
-- *MMBenchmark* (available at [OpenCompass Project page](https://opencompass.org.cn/mmbench))
-## Citations
+    The project currently contains an official implementation of the article "VADER; Visually Aimed Defeasible Reasoning".
+## Quickstart
 
-
-"...the **go to** statement should be abolished..." [[1]](#1).
-
-## References
-<a id="1">[1]</a> 
-
+TBD how to use the `evaluation_all.py` script with a few examples
 
 
 ## experiments
